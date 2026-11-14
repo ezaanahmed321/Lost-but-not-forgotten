@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LOST BUT NOT FORGOTTEN — NASA Space Apps Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#2f9bff;--cyan:#6fd8ff;--orange:#ff8a1f;--white:#eaf6ff;--panel:rgba(6,16,32,.80);--line:rgba(80,170,255,.45);--good:#4dffa6;--bad:#ff4d4d;--warn:#ffc34d}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--white);font-family:'Orbitron','Segoe UI',sans-serif;user-select:none;-webkit-user-select:none}
+.hidden{display:none!important}
+#stage{position:fixed;inset:0;overflow:hidden;background:#000}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;transform-origin:center center}
+#cockpit{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+#warpfx{position:fixed;inset:0;pointer-events:none;z-index:6;opacity:0;background:radial-gradient(circle at center,rgba(160,220,255,0) 20%,rgba(80,160,255,.35) 70%,rgba(255,255,255,.55) 100%)}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0;background:#fff}
+#bhvig{position:fixed;inset:0;pointer-events:none;z-index:6;opacity:0;background:radial-gradient(circle at center,rgba(0,0,0,0) 25%,rgba(10,0,25,.85) 100%)}
+#dmg{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0;box-shadow:inset 0 0 180px 60px rgba(255,0,0,.7)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;backdrop-filter:blur(4px);padding:10px 12px;box-shadow:0 0 18px rgba(30,120,255,.18)}
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud button,#hud input,#hud .pe{pointer-events:auto}
+#mission{position:absolute;top:14px;left:14px;width:310px;font-size:11px;letter-spacing:.5px;max-height:78vh;overflow:hidden}
+#mission .mt{color:var(--orange);font-weight:800;font-size:13px;letter-spacing:2px;margin-bottom:6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+#mission .st{color:var(--cyan);font-weight:600;margin:8px 0 3px;font-size:10px;letter-spacing:2px}
+.ck{display:flex;gap:6px;margin:2px 0;color:#bcd}
+.ck i{font-style:normal;width:14px;color:var(--cyan)}
+.ck.ok{color:var(--good)}.ck.ok i{color:var(--good)}
+.ck.sub{margin-left:18px;font-size:10px;opacity:.9}
+.ck.secret{color:#c9a2ff}.ck.secret i{color:#c9a2ff}
+#topright{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+#radarBox{padding:6px;position:relative}
+#minimap{display:block;width:170px;height:170px;border-radius:50%}
+#radarRange{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:9px;color:var(--cyan)}
+#statBox{width:250px;font-size:11px}
+#statRow{display:flex;gap:10px;align-items:center}
+#compass{width:64px;height:64px;flex:none}
+#tgt{font-size:10px;line-height:1.5}
+#tgt b{color:#ffd23f}
+.bar{height:9px;background:rgba(255,255,255,.12);border-radius:5px;overflow:hidden;margin:3px 0 6px;border:1px solid rgba(255,255,255,.15)}
+.bar>div{height:100%;transition:width .2s}
+#hullBar{background:linear-gradient(90deg,#ff4d4d,#ffb04d,#4dffa6)}
+#fuelBar{background:linear-gradient(90deg,#ff8a1f,#ffd23f)}
+.lbl{font-size:9px;letter-spacing:2px;color:var(--cyan);display:flex;justify-content:space-between}
+#botleft{position:absolute;bottom:14px;left:14px;width:290px;font-size:11px}
+#botleft input[type=range]{width:100%;accent-color:#ff8a1f}
+#vel{margin-top:4px;line-height:1.5;font-size:10px;color:#cde}
+#vel b{color:#fff;font-size:15px}
+#botright{position:absolute;bottom:14px;right:14px;display:flex;gap:10px}
+.btn{font-family:inherit;background:linear-gradient(180deg,rgba(20,70,140,.9),rgba(8,30,70,.9));color:var(--white);border:1px solid var(--blue);border-radius:5px;padding:9px 16px;font-size:12px;letter-spacing:2px;cursor:pointer;transition:all .15s;font-weight:600}
+.btn:hover{background:linear-gradient(180deg,rgba(40,120,220,.95),rgba(15,60,130,.95));box-shadow:0 0 14px rgba(60,160,255,.6)}
+.btn.or{border-color:var(--orange);background:linear-gradient(180deg,rgba(160,80,10,.9),rgba(80,35,5,.9))}
+.btn.or:hover{background:linear-gradient(180deg,rgba(230,120,20,.95),rgba(120,55,10,.95));box-shadow:0 0 14px rgba(255,140,30,.6)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:10px}
+.btn.on{background:var(--blue);color:#001}
+#botcenter{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);min-width:300px;max-width:34vw;font-size:10px}
+#botcenter .nr{display:flex;justify-content:space-between;gap:14px;margin:2px 0;color:#cde}
+#botcenter .nr span:last-child{color:var(--orange)}
+#botcenter .nh{font-size:9px;letter-spacing:2px;color:var(--cyan);margin-bottom:3px}
+#physics{position:absolute;left:14px;bottom:170px;width:290px;font-size:10px;line-height:1.7}
+#physics .nh{color:var(--orange);letter-spacing:2px;font-weight:800;margin-bottom:4px}
+#physics div.r{display:flex;justify-content:space-between}
+#physics div.r span:last-child{color:#fff}
+#crosshair{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border:1px solid rgba(120,210,255,.7);border-radius:50%}
+#crosshair:before,#crosshair:after{content:'';position:absolute;background:rgba(120,210,255,.8)}
+#crosshair:before{left:50%;top:-6px;width:1px;height:38px;margin-left:-.5px;clip-path:polygon(0 0,100% 0,100% 30%,0 30%,0 70%,100% 70%,100% 100%,0 100%)}
+#crosshair:after{top:50%;left:-6px;height:1px;width:38px;margin-top:-.5px;clip-path:polygon(0 0,30% 0,30% 100%,0 100%,70% 0,100% 0,100% 100%,70% 100%)}
+#hoverTip{position:absolute;left:50%;top:calc(50% + 34px);transform:translateX(-50%);font-size:11px;letter-spacing:2px;color:#9fe;text-shadow:0 0 8px #0af;white-space:nowrap;text-align:center}
+#alertBox{position:absolute;left:50%;top:92px;transform:translateX(-50%);font-size:15px;font-weight:800;letter-spacing:3px;color:var(--bad);text-shadow:0 0 12px #f00;text-align:center;animation:blink 0.8s infinite}
+@keyframes blink{50%{opacity:.35}}
+#lockHint{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);font-size:10px;letter-spacing:2px;color:#ffd23f;opacity:.85}
+#wp{position:absolute;left:0;top:0;color:#ffd23f;font-size:11px;font-weight:600;text-shadow:0 0 6px #000;white-space:nowrap}
+#wp .dia{width:16px;height:16px;border:2px solid #ffd23f;transform:rotate(45deg);margin:0 auto 6px;box-shadow:0 0 8px #ffd23f}
+#wp .arr{width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:22px solid #ffd23f;margin:0 auto 4px;filter:drop-shadow(0 0 6px #ffd23f)}
+#wp div.t{text-align:center}
+.vm{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;font-size:20px;line-height:26px;text-align:center;font-weight:800;text-shadow:0 0 6px #000}
+#progMark{color:#4dffa6;border:2px solid #4dffa6;border-radius:50%;width:22px;height:22px;margin:-11px 0 0 -11px}
+#progMark:before{content:'';position:absolute;left:50%;top:-8px;width:2px;height:6px;background:#4dffa6;margin-left:-1px}
+#retroMark{color:#ff8a1f;font-size:17px}
+#toasts{position:fixed;left:50%;top:140px;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:rgba(5,20,45,.92);border:1px solid var(--blue);padding:8px 18px;border-radius:5px;font-size:12px;letter-spacing:2px;animation:tin .3s ease,tout .6s ease 3.6s forwards;box-shadow:0 0 14px rgba(40,140,255,.4);text-align:center}
+.toast.good{border-color:var(--good);color:var(--good)}.toast.bad{border-color:var(--bad);color:var(--bad)}.toast.warn{border-color:var(--warn);color:var(--warn)}.toast.secret{border-color:#b27cff;color:#d9bfff}
+@keyframes tin{from{opacity:0;transform:translateY(-12px)}}
+@keyframes tout{to{opacity:0;transform:translateY(-8px)}}
+/* Tablet */
+#tablet{position:fixed;top:0;right:0;height:100%;width:min(410px,94vw);z-index:45;background:linear-gradient(180deg,rgba(4,14,32,.97),rgba(3,10,24,.97));border-left:2px solid var(--blue);transform:translateX(106%);transition:transform .38s cubic-bezier(.2,.85,.2,1);display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(20,100,255,.35);pointer-events:auto}
+#tablet.open{transform:none}
+#tbHead{padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+#tbHead small{color:var(--orange);letter-spacing:3px;font-size:9px}
+#tbTitle{font-size:20px;font-weight:800;color:#fff;margin-top:4px;letter-spacing:1px}
+#tbBody{padding:12px 18px;overflow-y:auto;flex:1;font-size:11px;line-height:1.6;font-family:'Segoe UI',sans-serif;color:#cfe3f5;user-select:text}
+#tbBody .row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed rgba(100,170,255,.2);padding:3px 0}
+#tbBody .row b{color:var(--cyan);font-family:'Orbitron';font-size:9px;letter-spacing:1.5px;font-weight:600;white-space:nowrap;padding-top:2px}
+#tbBody .row span{text-align:right}
+#tbBody h4{color:var(--orange);font-family:'Orbitron';font-size:10px;letter-spacing:2px;margin:12px 0 3px}
+#tbBody .warnbox{margin-top:12px;border:1px solid var(--bad);color:var(--bad);padding:8px;font-family:'Orbitron';font-size:10px;letter-spacing:1px;text-align:center;animation:blink 1.2s infinite}
+#tbBtns{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--line)}
+#tbBtns .btn{padding:8px 6px;font-size:10px}
+/* Overlays */
+.overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center}
+#intro{background:radial-gradient(ellipse at center,rgba(5,20,50,.82),rgba(0,0,6,.97));flex-direction:column;overflow-y:auto;z-index:70}
+#intro .box{max-width:880px;width:94%;text-align:center;padding:20px 0}
+#intro h1{font-size:clamp(26px,5vw,50px);font-weight:800;letter-spacing:4px;background:linear-gradient(90deg,#fff,#6fd8ff,#ff8a1f);-webkit-background-clip:text;background-clip:text;color:transparent}
+#intro h2{font-size:12px;letter-spacing:6px;color:var(--orange);margin:6px 0 16px}
+#intro p.story{font-family:'Segoe UI',sans-serif;font-size:14px;line-height:1.65;color:#cfe3f5;margin:0 auto 16px;max-width:760px}
+#intro .ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 18px;font-size:10px;text-align:left;letter-spacing:1px;margin:10px auto 18px;max-width:800px}
+#intro .ctl div{padding:3px 0;border-bottom:1px solid rgba(100,170,255,.15)}
+#intro .ctl b{color:var(--orange);display:inline-block;min-width:78px}
+#intro .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+#intro .btn{font-size:15px;padding:13px 30px}
+#loadmsg{font-size:11px;letter-spacing:3px;color:var(--cyan);margin-bottom:10px}
+#map{background:rgba(0,2,10,.94);flex-direction:column;align-items:stretch;justify-content:flex-start;z-index:42}
+#mapBar{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:rgba(5,15,35,.9)}
+#mapBar .t{font-weight:800;letter-spacing:3px;color:var(--orange);margin-right:10px;font-size:13px}
+#mapSearch{font-family:inherit;background:#04101f;border:1px solid var(--blue);color:#fff;padding:7px 10px;border-radius:4px;font-size:11px;letter-spacing:1px;width:200px}
+#mapCv{flex:1;width:100%;display:block;cursor:grab;min-height:0}
+#mapPop{position:fixed;z-index:44;background:rgba(5,18,40,.96);border:1px solid var(--blue);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:190px;box-shadow:0 0 20px rgba(40,140,255,.5)}
+#mapPop .pt{font-size:12px;color:var(--orange);font-weight:800;letter-spacing:1px;margin-bottom:2px}
+#mapPop small{color:#9bd;font-size:9px;letter-spacing:1px}
+#mapHint{position:absolute;bottom:10px;left:14px;font-size:10px;color:#7ab;letter-spacing:1px;pointer-events:none}
+#warpMenu{background:rgba(0,4,14,.82);z-index:44}
+.menu{background:rgba(5,16,36,.97);border:1px solid var(--blue);border-radius:8px;padding:18px 22px;max-width:640px;width:94%;max-height:86vh;overflow-y:auto;box-shadow:0 0 40px rgba(30,120,255,.4)}
+.menu h2{letter-spacing:4px;color:var(--orange);font-size:18px;margin-bottom:4px}
+.menu .sub{font-size:10px;color:var(--cyan);letter-spacing:2px;margin-bottom:12px}
+.menu h3{font-size:10px;letter-spacing:3px;color:var(--cyan);margin:12px 0 6px}
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}
+.wgrid .btn{font-size:10px;padding:7px 8px;text-align:left;display:flex;justify-content:space-between;gap:6px;letter-spacing:1px}
+.wgrid .btn span{color:var(--orange)}
+.wgrid .btn.bhw{border-color:#b27cff;background:linear-gradient(180deg,rgba(80,30,140,.9),rgba(40,10,80,.9))}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:10px 0;font-size:11px;letter-spacing:2px}
+.srow input[type=range]{width:200px;accent-color:#ff8a1f}
+.srow .grp{display:flex;gap:6px}
+#gameover{background:radial-gradient(ellipse at center,rgba(80,0,0,.55),rgba(0,0,0,.94));flex-direction:column;text-align:center;z-index:65}
+#gameover h1{font-size:clamp(24px,5vw,44px);color:var(--bad);letter-spacing:4px;text-shadow:0 0 24px #f00}
+#gameover p{font-family:'Segoe UI',sans-serif;font-size:16px;margin:14px 0 24px;color:#ddd;max-width:620px;line-height:1.5}
+#gameover.bh{background:radial-gradient(ellipse at center,rgba(40,0,70,.65),#000)}
+#gameover.bh h1{color:#c9a2ff;text-shadow:0 0 28px #90f}
+#win,#secretEnd{background:radial-gradient(ellipse at center,rgba(10,50,110,.75),rgba(0,0,8,.96));flex-direction:column;text-align:center;z-index:65}
+#secretEnd{background:radial-gradient(ellipse at center,rgba(70,20,120,.8),rgba(0,0,8,.97))}
+#win h1,#secretEnd h1{font-size:clamp(24px,4.6vw,42px);letter-spacing:4px;background:linear-gradient(90deg,#fff,#6fd8ff,#ff8a1f);-webkit-background-clip:text;background-clip:text;color:transparent}
+#secretEnd h1{background:linear-gradient(90deg,#fff,#d9a2ff,#6ff)}
+#win p,#secretEnd p{font-family:'Segoe UI',sans-serif;font-size:15px;margin:14px auto 22px;color:#d6e8ff;max-width:660px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+
+<svg id="cockpit" viewBox="0 0 100 100" preserveAspectRatio="none">
+  <g fill="rgba(4,9,16,.94)" stroke="rgba(80,170,255,.35)" stroke-width="1" vector-effect="non-scaling-stroke">
+    <polygon points="0,0 7,0 0,24" vector-effect="non-scaling-stroke"/>
+    <polygon points="100,0 93,0 100,24" vector-effect="non-scaling-stroke"/>
+    <polygon points="0,100 0,58 8,100" vector-effect="non-scaling-stroke"/>
+    <polygon points="100,100 100,58 92,100" vector-effect="non-scaling-stroke"/>
+    <path d="M0 100 L0 93 Q50 88 100 93 L100 100Z" vector-effect="non-scaling-stroke"/>
+  </g>
+</svg>
+<div id="warpfx"></div><div id="flash"></div><div id="bhvig"></div><div id="dmg"></div>
+
+<div id="hud" class="hidden">
+  <div id="mission" class="panel"></div>
+  <div id="topright">
+    <div id="radarBox" class="panel"><canvas id="minimap" width="170" height="170"></canvas><div id="radarRange"></div></div>
+    <div id="statBox" class="panel">
+      <div id="statRow"><canvas id="compass" width="64" height="64"></canvas><div id="tgt"></div></div>
+      <div class="lbl" style="margin-top:8px"><span>HULL</span><span id="hullTxt">100%</span></div>
+      <div class="bar"><div id="hullBar" style="width:100%"></div></div>
+      <div class="lbl"><span>FUEL</span><span id="fuelTxt">100%</span></div>
+      <div class="bar"><div id="fuelBar" style="width:100%"></div></div>
+    </div>
+  </div>
+  <div id="botleft" class="panel">
+    <div class="lbl"><span>THROTTLE / SPEED SLIDER</span><span id="thrTxt">50%</span></div>
+    <input type="range" id="throttle" min="5" max="100" value="50">
+    <div id="vel"></div>
+  </div>
+  <div id="botright">
+    <button class="btn or" id="btnWarp">WARP [J]</button>
+    <button class="btn" id="btnMap">MAP [M]</button>
+  </div>
+  <div id="botcenter" class="panel"></div>
+  <div id="physics" class="panel hidden"></div>
+  <div id="crosshair"></div>
+  <div id="hoverTip"></div>
+  <div id="alertBox"></div>
+  <div id="lockHint"></div>
+  <div id="wp" class="hidden"></div>
+  <div id="progMark" class="vm hidden"></div>
+  <div id="retroMark" class="vm hidden">✕</div>
+</div>
+<div id="toasts"></div>
+
+<div id="tablet">
+  <div id="tbHead"><small>NASA RECOVERY PILOT TABLET · DATABASE</small><div id="tbTitle"></div></div>
+  <div id="tbBody"></div>
+  <div id="tbBtns">
+    <button class="btn" id="tbClose">CLOSE</button>
+    <button class="btn" id="tbTarget">SET AS TARGET</button>
+    <button class="btn or" id="tbWarp">WARP TO IT</button>
+    <button class="btn" id="tbFound">MARK AS FOUND</button>
+    <button class="btn" id="tbMap" style="grid-column:span 2">SHOW ON MAP</button>
+  </div>
+</div>
+
+<div id="map" class="overlay hidden">
+  <div id="mapBar">
+    <span class="t">GALAXY MAP</span>
+    <button class="btn sm on" data-f="ALL">ALL</button>
+    <button class="btn sm" data-f="PLANETS">PLANETS</button>
+    <button class="btn sm" data-f="LOST">LOST OBJECTS</button>
+    <button class="btn sm" data-f="MEGA">MEGA STRUCTURES</button>
+    <button class="btn sm" data-f="MISSIONS">MISSIONS</button>
+    <input id="mapSearch" type="text" placeholder="Search: Mars, Beagle…" autocomplete="off">
+    <button class="btn sm" id="mapSolar">SOLAR SYSTEM</button>
+    <button class="btn sm" id="mapAll">ENTIRE GALAXY</button>
+    <button class="btn sm" id="mapLive">LIVE: OFF</button>
+    <button class="btn sm or" id="mapClose">CLOSE [M]</button>
+  </div>
+  <canvas id="mapCv"></canvas>
+  <div id="mapHint">Drag = pan · Wheel = zoom · Click a dot for options · Game is paused unless LIVE is on</div>
+  <div id="mapPop" class="hidden"></div>
+</div>
+
+<div id="warpMenu" class="overlay hidden"><div class="menu">
+  <h2>WARP DRIVE</h2>
+  <div class="sub">SELECT DESTINATION · COST 20% FUEL · 3s COOLDOWN · <span id="wmFuel"></span></div>
+  <div id="wmBody"></div>
+  <div style="margin-top:16px;text-align:right"><button class="btn" id="wmClose">CLOSE [J]</button></div>
+</div></div>
+
+<div id="settings" class="overlay hidden"><div class="menu" style="max-width:520px">
+  <h2>SETTINGS · PAUSED</h2>
+  <div class="sub">PRESS ESC TO RESUME</div>
+  <div class="srow"><span>VOLUME</span><input type="range" id="setVol" min="0" max="1" step="0.05"></div>
+  <div class="srow"><span>SOUND</span><div class="grp"><button class="btn sm" id="setSound">ON</button></div></div>
+  <div class="srow"><span>GRAPHICS</span><div class="grp"><button class="btn sm" data-g="low">LOW</button><button class="btn sm" data-g="med">MEDIUM</button><button class="btn sm" data-g="high">HIGH</button></div></div>
+  <div class="srow"><span>SENSITIVITY</span><input type="range" id="setSens" min="0.2" max="3" step="0.1"></div>
+  <div class="srow"><span>PHYSICS</span><div class="grp"><button class="btn sm" data-p="realistic">REALISTIC</button><button class="btn sm" data-p="arcade">ARCADE</button></div></div>
+  <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+    <button class="btn or" id="setResume">RESUME</button>
+    <button class="btn" id="setSave">SAVE GAME</button>
+    <button class="btn" id="setReset">NEW GAME (ERASE SAVE)</button>
+  </div>
+</div></div>
+
+<div id="gameover" class="overlay hidden">
+  <h1 id="goTitle">HULL BREACH</h1><p id="goText"></p>
+  <button class="btn or" id="goRespawn" style="font-size:15px;padding:13px 34px">RESPAWN AT EARTH</button>
+</div>
+
+<div id="win" class="overlay hidden">
+  <h1>OPERATION BEAGLE — COMPLETE</h1>
+  <p>Beagle 2 is home. Lost in 2003, found in 2015, and finally recovered by a NASA Recovery Pilot. Lost, but not forgotten.<br><br><span id="winStats" style="color:#ffd23f"></span><br><br>But as you powered down the engines, your radar picked up something impossible… a faint repeating signal from deep space. <b style="color:#d9bfff">UNKNOWN SIGNAL — ???</b></p>
+  <button class="btn or" id="winCont" style="font-size:15px;padding:13px 34px">CONTINUE · SECRET MISSION</button>
+</div>
+
+<div id="secretEnd" class="overlay hidden">
+  <h1>YOU FOUND THE FORGOTTEN WORLD</h1>
+  <p>Voyager-X, silent for decades, rests among the glowing crystals of Planet X. It never stopped transmitting — it was waiting for someone to listen.<br><br>Nothing in space is ever truly gone. It is only waiting to be found.<br><br><span id="secStats" style="color:#ffd23f"></span></p>
+  <button class="btn or" id="secCont" style="font-size:15px;padding:13px 34px">KEEP EXPLORING</button>
+</div>
+
+<div id="intro" class="overlay">
+  <div class="box">
+    <h1>LOST BUT NOT FORGOTTEN</h1>
+    <h2>NASA SPACE APPS CHALLENGE</h2>
+    <p class="story">You are a <b>NASA Recovery Pilot</b>. Your main mission: <b style="color:#ff8a1f">OPERATION BEAGLE</b> — fly to Mars, recover the British lander <b>Beagle 2</b> (lost in 2003, found in 2015) and bring it home to Earth. Out there are also nine other lost machines, a Dyson sphere, a station by the Moon… and deep in the dark, an <b style="color:#d9bfff">unknown signal</b>. Newton is your co-pilot: there is no friction in space. What you push, keeps moving.</p>
+    <div class="ctl">
+      <div><b>W / S</b> Forward Thrust / Brake &amp; Reverse</div><div><b>A / D</b> Strafe Left / Right</div><div><b>SPACE</b> Move Up</div>
+      <div><b>SHIFT</b> Boost / Warp</div><div><b>X</b> Full Stop / Stabilize</div><div><b>E</b> Collect / Interact</div>
+      <div><b>M</b> Galaxy Map</div><div><b>TAB</b> Toggle Cursor</div><div><b>ESC</b> Pause / Settings</div>
+      <div><b>MOUSE</b> Smooth Look</div><div><b>Q / Z</b> Roll</div><div><b>SCROLL</b> Radar Range</div>
+    </div>
+    <div id="loadmsg">GENERATING PROCEDURAL UNIVERSE…</div>
+    <div class="btns"><button class="btn or" id="btnStart" disabled>START MISSION</button><button class="btn" id="btnContinue" disabled>CONTINUE SAVED GAME</button></div>
+    <p style="font-size:10px;letter-spacing:2px;color:#6a8;margin-top:18px">Launch pad: you start on Earth, facing the sky. Hold <b>W</b> to lift off. Soft landings need relative speed &lt; 5 m/s.</p>
+  </div>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ======================================================================
+   LOST BUT NOT FORGOTTEN — NASA Space Apps Challenge
+   Single-file 3D sandbox space game (Three.js r160)
+   Sections: 1 Utils/Noise · 2 Audio · 3 State/Save · 4 Scene · 5 Textures
+             6 World building · 7 Input · 8 Physics · 9 Missions · 10 HUD
+             11 Minimap/Map · 12 Tablet/Warp/Menus · 13 Main loop
+   ====================================================================== */
+
+/* ---------- 1. UTILS & NOISE ---------- */
+const TAU=Math.PI*2, PI=Math.PI;
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+const ZERO=new THREE.Vector3(), Y=new THREE.Vector3(0,1,0);
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rnd=mulberry32(20251004);
+function h3(x,y,z){let h=(Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(z,1274126177))|0;h=Math.imul(h^(h>>>13),1103515245);h^=h>>>16;return (h>>>0)/4294967295}
+function n3(x,y,z){const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),xf=x-xi,yf=y-yi,zf=z-zi;
+  const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf),w=zf*zf*(3-2*zf);
+  const a=lerp(lerp(h3(xi,yi,zi),h3(xi+1,yi,zi),u),lerp(h3(xi,yi+1,zi),h3(xi+1,yi+1,zi),u),v);
+  const b=lerp(lerp(h3(xi,yi,zi+1),h3(xi+1,yi,zi+1),u),lerp(h3(xi,yi+1,zi+1),h3(xi+1,yi+1,zi+1),u),v);
+  return lerp(a,b,w)}
+function fbm(x,y,z,o){let a=.5,f=1,s=0,t=0;for(let i=0;i<o;i++){s+=a*n3(x*f,y*f,z*f);t+=a;f*=2.03;a*=.5}return s/t}
+
+/* ---------- 3. STATE / SETTINGS / SAVE ---------- */
+const WORLD=500000, SHIP_MASS=5000, SHIP_R=6, MAX_ACC=60, AB_MULT=4;
+const BH_POS=new THREE.Vector3(150000,0,150000), BH_GM=1.25e8, BH_R=300;
+const DYSON_POS=new THREE.Vector3(-110000,4000,70000);
+const SAVE_KEY='lbnf_space_save_v1';
+const settings={vol:.6,sound:true,gfx:'high',sens:1,physics:'realistic'};
+const S={
+  ui:'intro',
+  pos:new THREE.Vector3(),vel:new THREE.Vector3(),quat:new THREE.Quaternion(),
+  acc:new THREE.Vector3(),gAcc:new THREE.Vector3(),thr:new THREE.Vector3(),thrustN:0,
+  hull:100,fuel:100,throttle:.5,score:0,simTime:0,playTime:0,
+  landed:null,landOff:new THREE.Vector3(),
+  flags:{launched:false,beagle:false,won:false,secretDone:false},
+  found:{},collected:{},discovered:{},docked:{},
+  target:null,orbit:false,orbitR:null,brake:false,warp:null,warpCd:0,
+  timeScale:1,shake:0,hitCd:0,over:false,wantLock:true,locked:false,suppress:false,lastUnlock:0,
+  hover:null,near:null,radar:3000,mapLive:false,ref:null,refName:'Sun',refVel:new THREE.Vector3(),
+  inAtmo:false,refuel:'',alertMsg:'',alertT:0,bhDist:1e9,
+  keys:{},mx:0,my:0,pendYaw:0,pendPitch:0,cx:0,cy:0,tabletEnt:null,physPanel:false,ab:false,
+  fovExtra:0,started:false,lastSave:0
+};
+function saveGame(){
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify({v:1,pos:S.pos.toArray(),vel:S.vel.toArray(),quat:S.quat.toArray(),
+      hull:S.hull,fuel:S.fuel,throttle:S.throttle,score:S.score,simTime:S.simTime,playTime:S.playTime,flags:S.flags,
+      found:S.found,collected:S.collected,discovered:S.discovered,docked:S.docked,target:S.target,
+      landed:S.landed?S.landed.id:null,landOff:S.landOff.toArray(),settings}));
+    return true;
+  }catch(e){return false}
+}
+function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null}catch(e){return null}}
+
+/* ---------- 2. AUDIO (procedural WebAudio) ---------- */
+const AUD={
+  ctx:null,hbT:0,radT:0,mysT:0,
+  init(){
+    if(this.ctx){if(this.ctx.state==='suspended')this.ctx.resume();return}
+    try{
+      const ctx=this.ctx=new (window.AudioContext||window.webkitAudioContext)();
+      this.master=ctx.createGain();this.master.connect(ctx.destination);this.setVol();
+      const len=ctx.sampleRate*2,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);
+      for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+      this.nbuf=buf;
+      const loopNoise=(type,freq,q)=>{const s=ctx.createBufferSource();s.buffer=buf;s.loop=true;const f=ctx.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q||.7;const g=ctx.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(this.master);s.start();return{g,f}};
+      const osc=(type,freq,vol)=>{const o=ctx.createOscillator();o.type=type;o.frequency.value=freq;const g=ctx.createGain();g.gain.value=vol;o.connect(g);g.connect(this.master);o.start();return{o,g}};
+      this.hum=[osc('sine',55,.06),osc('triangle',55.9,.03),osc('sine',110.3,.012)];
+      this.eng=loopNoise('lowpass',250,1);this.engO=osc('sawtooth',48,0);
+      this.bh=loopNoise('lowpass',110,2);this.bhO=osc('sine',36,0);
+    }catch(e){this.ctx=null}
+  },
+  setVol(){if(this.master)this.master.gain.value=settings.sound?settings.vol:0},
+  tone(f,dur,type,vol,slide,delay){
+    if(!this.ctx||!settings.sound)return;const c=this.ctx,t=c.currentTime+(delay||0);
+    const o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);
+    if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,slide),t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol||.2,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g);g.connect(this.master);o.start(t);o.stop(t+dur+.05);
+  },
+  noise(dur,f0,f1,vol,type){
+    if(!this.ctx||!settings.sound)return;const c=this.ctx,t=c.currentTime;
+    const s=c.createBufferSource();s.buffer=this.nbuf;const fl=c.createBiquadFilter();fl.type=type||'lowpass';
+    fl.frequency.setValueAtTime(f0,t);fl.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);
+    const g=c.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    s.connect(fl);fl.connect(g);g.connect(this.master);s.start(t);s.stop(t+dur+.05);
+  },
+  chime(){this.tone(880,.5,'sine',.22);this.tone(1320,.7,'sine',.18,0,.12);this.tone(1760,.9,'sine',.12,0,.24)},
+  blip(){this.tone(1400,.08,'square',.06);this.tone(2100,.08,'square',.05,0,.06)},
+  tabletOpen(){this.tone(500,.15,'triangle',.12,900);this.tone(1200,.1,'sine',.08,0,.1)},
+  tabletClose(){this.tone(900,.15,'triangle',.1,400)},
+  thud(){this.tone(90,.5,'sine',.7,28);this.noise(.4,900,60,.5)},
+  whoosh(){this.noise(2.6,200,6000,.5,'bandpass');this.tone(60,2.6,'sawtooth',.18,900)},
+  beep(f){this.tone(f||1200,.07,'sine',.07)},
+  alarm(){this.tone(700,.18,'square',.07);this.tone(520,.18,'square',.07,0,.2)},
+  thump(v){this.tone(62,.17,'sine',.55*(v||1),32)},
+  mystery(pan){
+    if(!this.ctx||!settings.sound)return;const c=this.ctx,t=c.currentTime;
+    const pn=c.createStereoPanner?c.createStereoPanner():null;if(pn)pn.pan.value=clamp(pan,-1,1);
+    [[740,0],[554,.22],[932,.44]].forEach(([f,d])=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.08,t+d+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d+.35);
+      o.connect(g);if(pn){g.connect(pn);pn.connect(this.master)}else g.connect(this.master);o.start(t+d);o.stop(t+d+.4)});
+  },
+  update(dt,i){
+    if(!this.ctx)return;const t=this.ctx.currentTime,on=settings.sound?1:0;
+    this.eng.g.gain.setTargetAtTime(i.thrust*.28*on,t,.1);this.eng.f.frequency.setTargetAtTime(180+i.thrust*1000,t,.1);
+    this.engO.g.gain.setTargetAtTime(i.thrust*.045*on,t,.1);
+    this.bh.g.gain.setTargetAtTime(i.bh*.9*on,t,.25);this.bhO.g.gain.setTargetAtTime(i.bh*.55*on,t,.25);
+    if(i.bh>.3&&on){this.hbT-=dt;if(this.hbT<=0){this.hbT=1-i.bh*.6;this.thump(i.bh);setTimeout(()=>this.thump(i.bh*.7),180)}}
+    this.radT-=dt;if(this.radT<=0&&i.near>0){this.radT=lerp(.35,2.2,clamp(i.nearD/2500,0,1));this.beep(1100+Math.random()*60)}
+    if(!S.discovered.bh&&i.mystery>0){this.mysT-=dt;if(this.mysT<=0){this.mysT=lerp(.9,5,clamp(i.mDist/150000,0,1));this.mystery(i.mPan)}}
+  }
+};
+
+/* ---------- 4. SCENE ---------- */
+const canvas=$('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(innerWidth,innerHeight,false);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x000004);
+scene.matrixWorldAutoUpdate=false;
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,1,4e6);scene.add(camera);
+const raycaster=new THREE.Raycaster();
+scene.add(new THREE.AmbientLight(0x7a90b8,.7));
+const sunLight=new THREE.PointLight(0xfff2dd,3.3,0,0);scene.add(sunLight);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);if(S.ui==='map')mapResize()});
+function applyGraphics(){
+  const m={low:.5,med:1,high:Math.min(devicePixelRatio,1.5)}[settings.gfx]||1;renderer.setPixelRatio(m);renderer.setSize(innerWidth,innerHeight,false);
+  if(bhParticles)bhParticles.visible=settings.gfx!=='low';
+}
+
+/* ---------- 5. PROCEDURAL TEXTURES ---------- */
+const O=[0,0,0];
+const lerpC=(o,a,b,t)=>{o[0]=a[0]+(b[0]-a[0])*t;o[1]=a[1]+(b[1]-a[1])*t;o[2]=a[2]+(b[2]-a[2])*t;return o};
+const gasFn=(c1,c2,c3,bands,turb,spot)=>(x,y,z,lat,s)=>{
+  const w=fbm(x*3+s,y*1.6,z*3,4),b=Math.sin(y*bands+w*turb)*.5+.5,b2=fbm(x*1.5,y*bands*.5+s,z*1.5,3);
+  const t=clamp(b*.7+b2*.5,0,1);
+  if(t<.5)lerpC(O,c1,c2,t*2);else lerpC(O,c2,c3,(t-.5)*2);
+  if(spot){const lon=Math.atan2(z,x),dl=Math.atan2(Math.sin(lon-spot.lon),Math.cos(lon-spot.lon)),dy=lat-spot.lat;
+    const q=(dl*dl)/(.06*.06*1.6)+(dy*dy)/(.05*.05);if(q<1)lerpC(O,O,spot.c,(1-q)*.9)}
+  return O};
+const TEXFN={
+  earth:(x,y,z,lat,s)=>{
+    const n=fbm(x*2.3+s,y*2.3,z*2.3,4);
+    if(Math.abs(lat)>1.2+(fbm(x*4,y*4,z*4,2)-.5)*.25)return lerpC(O,[225,235,245],[250,252,255],n);
+    if(n<.52){return lerpC(O,[34,115,195],[8,30,95],Math.min(1,(.52-n)*3.2))}
+    const m=fbm(x*4+9,y*4,z*4,3),t=(n-.52)*2.2;
+    if(Math.abs(lat)<.6&&m>.52)lerpC(O,[205,175,115],[165,125,75],m);
+    else lerpC(O,[52,125,55],[85,105,55],m);
+    if(t>.5)lerpC(O,O,[120,95,70],Math.min(1,(t-.5)*1.8));
+    if(Math.abs(lat)>.95)lerpC(O,O,[180,190,170],.6);
+    return O},
+  moon:(x,y,z,lat,s)=>{
+    const n=fbm(x*2+s,y*2,z*2,3),r=1-Math.abs(fbm(x*6+s,y*6,z*6,2)*2-1),mar=fbm(x*1.3+3,y*1.3,z*1.3,2)>.55?.62:1;
+    const v=(80+n*95+r*40)*mar;O[0]=v;O[1]=v;O[2]=v*.97;return O},
+  mercury:(x,y,z,lat,s)=>{
+    const n=fbm(x*3+s,y*3,z*3,3),r=1-Math.abs(fbm(x*8+s,y*8,z*8,2)*2-1);
+    const v=70+n*80+r*40;O[0]=v*1.05;O[1]=v*.95;O[2]=v*.85;return O},
+  venus:(x,y,z,lat,s)=>{
+    const n=fbm(x*2+s,y*3,z*2,3);return lerpC(O,[245,225,170],[205,150,70],clamp(n*1.3-.1,0,1))},
+  mars:(x,y,z,lat,s)=>{
+    const n=fbm(x*2+s,y*2,z*2,3),d=fbm(x*2+7,y*2,z*2+7,3);
+    if(Math.abs(lat)>1.38)return lerpC(O,[230,230,235],[255,255,255],n);
+    lerpC(O,[200,100,55],[135,60,38],n);if(d>.56)lerpC(O,O,[70,42,38],clamp((d-.56)*4,0,.8));
+    const r=1-Math.abs(fbm(x*8,y*8,z*8,2)*2-1);O[0]*=.9+r*.15;O[1]*=.9+r*.15;O[2]*=.9+r*.15;return O},
+  jupiter:gasFn([235,210,170],[195,135,85],[130,80,50],10,2.4,{lon:3.0,lat:-.38,c:[190,70,45]}),
+  saturn:gasFn([238,220,165],[205,180,125],[150,130,92],8,1.3),
+  uranus:gasFn([160,230,238],[125,208,226],[112,192,216],4,.6),
+  neptune:gasFn([55,95,215],[40,70,190],[28,48,150],5,1.6,{lon:1.2,lat:-.3,c:[15,25,90]}),
+  sun:(x,y,z)=>{const n=fbm(x*4,y*4,z*4,3);lerpC(O,[255,205,70],[255,120,25],n);return O},
+  star:(x,y,z)=>{const n=fbm(x*4,y*4,z*4,3);return lerpC(O,[255,255,245],[210,225,255],n)},
+  planetx:(x,y,z,lat,s)=>{
+    const n=fbm(x*2+s,y*2,z*2,3);
+    if(n<.5){lerpC(O,[70,14,125],[165,50,215],clamp((.5-n)*3,0,1));return O}
+    lerpC(O,[34,18,58],[92,58,135],clamp((n-.5)*3,0,1));
+    return O}
+};
+function planetTexture(kind,w,h,seed){
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d');
+  const img=cx.createImageData(w,h),d=img.data,fn=TEXFN[kind],sd=(seed||1)*17.13;
+  for(let y=0;y<h;y++){const lat=(.5-(y+.5)/h)*PI,cl=Math.cos(lat),sl=Math.sin(lat);
+    for(let x=0;x<w;x++){const lon=((x+.5)/w)*TAU,c=fn(cl*Math.cos(lon),sl,cl*Math.sin(lon),lat,sd),i=(y*w+x)*4;
+      d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2];d[i+3]=255}}
+  cx.putImageData(img,0,0);
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=2;return t;
+}
+function cloudTexture(){
+  const w=256,h=128,cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d'),img=cx.createImageData(w,h),d=img.data;
+  for(let y=0;y<h;y++){const lat=(.5-(y+.5)/h)*PI,cl=Math.cos(lat),sl=Math.sin(lat);
+    for(let x=0;x<w;x++){const lon=((x+.5)/w)*TAU,n=fbm(cl*Math.cos(lon)*2.5+5,sl*2.5,cl*Math.sin(lon)*2.5,3),a=smooth(.5,.72,n),i=(y*w+x)*4;
+      d[i]=d[i+1]=d[i+2]=255;d[i+3]=a*215}}
+  cx.putImageData(img,0,0);const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function glowTexture(inner,outer){
+  const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d');
+  const g=c.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,inner||'rgba(255,255,255,1)');g.addColorStop(.25,outer||'rgba(160,210,255,.5)');g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g;c.fillRect(0,0,64,64);const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function ringIconTexture(){
+  const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d');
+  c.strokeStyle='#fff';c.lineWidth=5;c.beginPath();c.arc(32,32,26,0,TAU);c.stroke();
+  const t=new THREE.CanvasTexture(cv);return t;
+}
+function ringTexture(){
+  const w=256,cv=document.createElement('canvas');cv.width=w;cv.height=2;const c=cv.getContext('2d');
+  for(let i=0;i<w;i++){const t=i/w;let a=.25+.6*n3(i*.045,3,3);
+    if(t>.58&&t<.64)a*=.08;a=clamp(a,0,.95);
+    c.fillStyle=`rgba(${215-t*40|0},${190-t*45|0},${140-t*40|0},${a})`;c.fillRect(i,0,1,2)}
+  const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;return tx;
+}
+function nebulaTexture(){
+  const w=512,h=256,cv=document.createElement('canvas');cv.width=w;cv.height=h;const c=cv.getContext('2d');
+  c.fillStyle='#000';c.fillRect(0,0,w,h);c.globalCompositeOperation='lighter';
+  const hues=[[40,60,160],[120,30,140],[20,90,150]];
+  for(let i=0;i<40;i++){
+    const x=rnd()*w,y=h*.5+(rnd()+rnd()-1)*h*.3,r=30+rnd()*80,hu=hues[i%hues.length],a=.06+rnd()*.06;
+    const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${hu[0]},${hu[1]},${hu[2]},${a})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2);
+  }
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+
+/* ---------- 6. WORLD BUILDING ---------- */
+const ents=[],byId={},proxies=[];
+let bhParticles=null,bhDisk=null,bhLens=null,bhGlow1=null,bhGlow2=null,sunCorona=[],starsGroup=null,hlSprite=null;
+let gravBodies=[],colBodies=[],hillBodies=[],earth=null,mars=null,sunE=null,bhE=null,pxE=null;
+const glowTex=glowTexture();
+const LM=(c,e)=>new THREE.MeshLambertMaterial({color:c,emissive:e||0x000000});
+const BMat=(c,o)=>new THREE.MeshBasicMaterial(Object.assign({color:c},o||{}));
+const mesh=(geo,mat,x,y,z,p)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x||0,y||0,z||0);if(p)p.add(m);return m};
+const box=(w,h,d,mat,x,y,z,p)=>mesh(new THREE.BoxGeometry(w,h,d),mat,x,y,z,p);
+const cyl=(rt,rb,h,mat,x,y,z,p,seg)=>mesh(new THREE.CylinderGeometry(rt,rb,h,seg||12),mat,x,y,z,p);
+const sph=(r,mat,x,y,z,p)=>mesh(new THREE.SphereGeometry(r,12,8),mat,x,y,z,p);
+function beacon(color,size,parent,x,y,z){
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:false}));
+  s.scale.set(size,size,1);s.position.set(x||0,y||0,z||0);parent.add(s);return s;
+}
+function atmoMat(color,p){
+  return new THREE.ShaderMaterial({uniforms:{c:{value:new THREE.Color(color)},p:{value:p||3}},
+    vertexShader:`varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform vec3 c;uniform float p;varying vec3 vN;void main(){float i=pow(max(0.,.72-dot(vN,vec3(0.,0.,1.))),p);gl_FragColor=vec4(c*1.6,clamp(i,0.,1.));}`,
+    side:THREE.BackSide,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false});
+}
+const proxyGeo=new THREE.SphereGeometry(1,8,6),proxyMat=new THREE.MeshBasicMaterial({visible:false});
+function addProxy(e,r,parent,geo){
+  const p=new THREE.Mesh(geo||proxyGeo,proxyMat);if(!geo)p.scale.setScalar(r);p.userData.ent=e;(parent||e.node).add(p);e.proxies.push(p);proxies.push(p);return p;
+}
+function posAt(e,t,out){
+  if(e.orbit){const o=e.orbit,a=o.phase+o.w*t,c=Math.cos(a),s=Math.sin(a),ci=Math.cos(o.incl||0),si=Math.sin(o.incl||0);
+    out.set(c*o.r,s*o.r*si,s*o.r*ci);
+    if(o.parent){const p=new THREE.Vector3();posAt(o.parent,t,p);out.add(p)}else if(o.center)out.add(o.center);
+  }else if(e.attach){posAt(e.attach.body,t,out);out.add(e.attach.off)}
+  else out.copy(e.fixed||ZERO);
+  return out;
+}
+function registerEnt(e){ents.push(e);byId[e.id]=e;return e}
+function makeBody(o){
+  const R=o.R,e={id:o.id,name:o.name,cat:o.cat||'planet',R,GM:o.GM||o.g*R*R,g:o.g||o.GM/(R*R),pos:new THREE.Vector3(),vel:new THREE.Vector3(),isBody:true,
+    gas:!!o.gas,deadly:o.deadly||null,atmoH:o.atmoH||0,orbit:o.orbit||null,fixed:o.fixed||null,info:o.info,proxies:[],pickR:R,hill:!!o.hill,color:o.color||'#8cf'};
+  if(o.fixed){e.static=true;e.pos.copy(o.fixed)}
+  const grp=new THREE.Group();e.node=grp;
+  const tex=planetTexture(o.tex,o.tw||256,o.th||128,o.seed||1);
+  const mat=o.emissive?new THREE.MeshBasicMaterial({map:tex}):new THREE.MeshLambertMaterial({map:tex});
+  const m=new THREE.Mesh(new THREE.SphereGeometry(R,o.seg||32,(o.seg||32)/2),mat);grp.add(m);e.mesh=m;
+  if(o.atmo)grp.add(new THREE.Mesh(new THREE.SphereGeometry(R*(1+o.atmo.s),32,16),atmoMat(o.atmo.c,o.atmo.p)));
+  if(o.rings){const inn=R*o.rings.i,out=R*o.rings.o,g=new THREE.RingGeometry(inn,out,48,1),uv=g.attributes.uv,pp=g.attributes.position;
+    for(let i=0;i<uv.count;i++){const rr=Math.hypot(pp.getX(i),pp.getY(i));uv.setXY(i,(rr-inn)/(out-inn),.5)}
+    const rm=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:ringTexture(),side:THREE.DoubleSide,transparent:true,depthWrite:false}));
+    rm.rotation.x=-PI/2+o.rings.tilt;rm.rotation.z=.3;grp.add(rm)}
+  scene.add(grp);addProxy(e,R);return registerEnt(e);
+}
+function makeThing(o){
+  const e={id:o.id,name:o.name,cat:o.cat,node:o.node,pos:new THREE.Vector3(),vel:new THREE.Vector3(),R:0,GM:0,proxies:[],pickR:o.pickR||8,info:o.info,
+    orbit:o.orbit||null,attach:o.attach||null,fixed:o.fixed||null,interact:o.interact||null,tick:o.tick||null,dock:!!o.dock,refuel:!!o.refuel,
+    surface:!!o.attach,secret:!!o.secret,color:o.color||'#6fd8ff',beacon:o.beacon};
+  if(o.fixed){e.static=true;e.pos.copy(o.fixed);o.node.position.copy(o.fixed)}
+  if(o.attach){o.attach.body.node.add(o.node);o.node.position.copy(o.attach.off);o.node.quaternion.setFromUnitVectors(Y,o.attach.off.clone().normalize())}
+  else scene.add(o.node);
+  if(!o.noProxy)addProxy(e,e.pickR);
+  return registerEnt(e);
+}
+function surf(body,lat,lon,h){
+  const la=lat*PI/180,lo=lon*PI/180,n=new THREE.Vector3(Math.cos(la)*Math.cos(lo),Math.sin(la),Math.cos(la)*Math.sin(lo));
+  return{body,off:n.multiplyScalar(body.R+(h||0))};
+}
+
+/* ----- NASA info database ----- */
+const INF={
+sun:{type:"G-type Main-Sequence Star",status:"Active — our home star",launch:"Formed ~4.6 billion years ago",agency:"Studied by NASA SDO, Parker Solar Probe, ESA/NASA SOHO",location:"Center of the Solar System",what:"The Sun holds 99.8% of all mass in the Solar System. Its gravity keeps every planet in orbit.",why:"Without the Sun there is no light, no warmth and no life on Earth. Parker Solar Probe now touches its corona.",fun:"About 1.3 million Earths could fit inside the Sun.",planet:{diam:"1,391,000 km",day:"25–35 days (rotation)",year:"~230 million years per galactic orbit",temp:"5,500 °C surface · 15,000,000 °C core",moons:"8 planets",live:"No — your hull would be incinerated."}},
+mercury:{type:"Terrestrial Planet",status:"Visited by Mariner 10 and MESSENGER",launch:"MESSENGER: Aug 3, 2004",agency:"NASA / ESA-JAXA (BepiColombo)",location:"Innermost planet",what:"A cratered, airless world that swings extremely close to the Sun.",why:"It helps scientists understand how rocky planets form close to a star.",fun:"A day on Mercury (sunrise to sunrise) lasts about 176 Earth days.",planet:{diam:"4,879 km",day:"59 Earth days (rotation)",year:"88 Earth days",temp:"−180 °C to 430 °C",moons:"0",live:"No — brutal temperature swings and no atmosphere."}},
+venus:{type:"Terrestrial Planet",status:"Visited by many probes (Magellan, Venera, Akatsuki)",launch:"Magellan: May 4, 1989",agency:"NASA / Roscosmos / JAXA",location:"2nd planet from the Sun",what:"A runaway greenhouse effect turned Venus into the hottest planet, with crushing pressure.",why:"Venus is a warning and a lesson about climate change on a planetary scale.",fun:"Venus spins backwards and its day is longer than its year.",planet:{diam:"12,104 km",day:"243 Earth days (retrograde)",year:"225 Earth days",temp:"465 °C (surface)",moons:"0",live:"No — lead-melting heat and sulfuric acid clouds. Floating cities maybe."}},
+earth:{type:"Terrestrial Planet · HOME",status:"Inhabited — mission base",launch:"Formed ~4.5 billion years ago",agency:"Everyone",location:"3rd planet from the Sun",what:"The only known world with life. Your launch pad, fuel supply and the end of Operation Beagle.",why:"Everything we send into space is built to learn how to protect this planet.",fun:"Earth is the densest planet in the Solar System.",planet:{diam:"12,742 km",day:"24 hours",year:"365.25 days",temp:"15 °C average",moons:"1 (the Moon)",live:"Yes! The only planet we know that does."}},
+moon:{type:"Natural Satellite",status:"Visited by 12 astronauts (Apollo)",launch:"Apollo 11 landing: Jul 20, 1969",agency:"NASA · Roscosmos · CNSA · ISRO",location:"Orbits Earth every 27.3 days",what:"Formed after a Mars-sized body hit the young Earth. Home to Apollo 11 and Lunokhod 1 sites.",why:"The Moon is the stepping stone for Artemis and future Mars missions.",fun:"The Moon drifts about 3.8 cm farther from Earth every year.",planet:{diam:"3,474 km",day:"27.3 Earth days",year:"27.3 days around Earth",temp:"−173 °C to 127 °C",moons:"0",live:"Not without habitats — no air, extreme temperatures."}},
+mars:{type:"Terrestrial Planet",status:"Active — rovers Perseverance and Curiosity, orbiters",launch:"First success: Mariner 4 (1964)",agency:"NASA · ESA · UAE · CNSA · ISRO",location:"4th planet from the Sun",what:"A cold desert planet with ancient riverbeds. Beagle 2, Mars Polar Lander and your Mars Base Alpha sit here.",why:"Mars is our best chance of finding past life and our first target for human exploration.",fun:"Olympus Mons is the tallest volcano known — about 22 km high.",planet:{diam:"6,779 km",day:"24 h 37 min",year:"687 Earth days",temp:"−65 °C average (−140 to 20 °C)",moons:"2 (Phobos, Deimos)",live:"Not yet — thin CO₂ air and no liquid water; possible in domes."}},
+jupiter:{type:"Gas Giant",status:"Studied by Juno, Galileo, Voyager, Europa Clipper en route",launch:"Juno: Aug 5, 2011",agency:"NASA",location:"5th planet from the Sun",what:"The largest planet; the Great Red Spot is a storm that has raged for centuries.",why:"Its moons, such as Europa, may hide oceans where life could exist.",fun:"Jupiter's gravity shields the inner planets from many comets.",planet:{diam:"139,820 km",day:"~10 hours",year:"11.9 Earth years",temp:"−110 °C (cloud tops)",moons:"90+ known",live:"No — no solid surface. Entering means being crushed."}},
+saturn:{type:"Gas Giant",status:"Studied by Cassini–Huygens (ended 2017)",launch:"Cassini: Oct 15, 1997",agency:"NASA / ESA / ASI",location:"6th planet from the Sun",what:"Famous for its bright rings made of ice and rock. Fuel Station Cronus orbits here.",why:"Moons Titan and Enceladus are top targets in the search for life.",fun:"Saturn is less dense than water — it would float in a giant bathtub.",planet:{diam:"116,460 km",day:"~10.7 hours",year:"29.5 Earth years",temp:"−140 °C (cloud tops)",moons:"270+ known",live:"No — no surface, extreme winds."}},
+uranus:{type:"Ice Giant",status:"Visited only by Voyager 2 (1986)",launch:"Voyager 2: Aug 20, 1977",agency:"NASA",location:"7th planet from the Sun",what:"An ice giant tilted on its side, rolling around the Sun like a ball.",why:"Scientists want an orbiter — ice giants may be the most common planet type in the galaxy.",fun:"Uranus has seasons lasting about 21 Earth years each.",planet:{diam:"50,724 km",day:"~17 hours",year:"84 Earth years",temp:"−195 °C",moons:"28 known",live:"No."}},
+neptune:{type:"Ice Giant",status:"Visited only by Voyager 2 (1989)",launch:"Voyager 2: Aug 20, 1977",agency:"NASA",location:"8th planet from the Sun",what:"The windiest planet — storms exceed 2,000 km/h.",why:"Neptune's discovery in 1846 was predicted with math before anyone saw it.",fun:"One Neptune year equals 165 Earth years.",planet:{diam:"49,244 km",day:"~16 hours",year:"165 Earth years",temp:"−200 °C",moons:"16 known",live:"No."}},
+planetx:{type:"Unknown Exoplanet-class World (fictional)",status:"UNCHARTED — The Forgotten World",launch:"—",agency:"Undiscovered",location:"Stable orbit around Gargantua-1",what:"A world of purple oceans, glowing crystals and ruins older than humanity — hidden in the light of a black hole.",why:"It proves that a place can be lost for ages and still hold an answer.",fun:"The crystals hum at the same frequency as the signal you followed.",planet:{diam:"≈ 9,000 km (estimated)",day:"Unknown",year:"≈ 26 minutes (game time)",temp:"Unknown — warm, thanks to the accretion disk",moons:"0",live:"Perhaps. Something lived here."}},
+bh:{type:"Supermassive Black Hole",status:"DISCOVERED by you",launch:"—",agency:"Observed by the Event Horizon Telescope (real ones)",location:"(150,000 · 0 · 150,000)",what:"Gargantua-1: light bends around it, time slows near it, and nothing escapes inside the event horizon.",why:"Black holes show us the most extreme physics in the universe and shape galaxies.",fun:"Near the event horizon, you would be stretched into a long thin strand — spaghettification.",bh:true,warn:"DO NOT APPROACH WITHOUT FULL FUEL"},
+beagle2:{type:"Mars Lander (Lost)",status:"Lost 2003 · Found 2015 · Silent but intact",launch:"Jun 2, 2003 (on ESA Mars Express)",agency:"UK-led · ESA Mars Express",location:"Isidis Planitia, Mars",what:"Beagle 2 separated from Mars Express and was never heard from. In 2015 NASA's HiRISE imaged it: it landed safely, but only 3 of 4 solar panels opened, likely blocking its antenna.",why:"It was not a total failure — it reached the surface alive. Proof that being lost is not the same as being gone.",fun:"Its wake-up tune was composed by Blur's Graham Coxon, and a Damien Hirst spot painting was used to calibrate its cameras."},
+mpl:{type:"Mars Lander (Lost)",status:"Lost on landing — wreckage possibly identified",launch:"Jan 3, 1999",agency:"NASA / JPL",location:"Near Mars south pole",what:"Contact was lost during descent on Dec 3, 1999. Investigators suspect the engines shut off early after a false touchdown signal.",why:"The failure changed how NASA tests landing software.",fun:"It carried two Deep Space 2 microprobes designed to hit the ground and dig for ice."},
+pioneer10:{type:"Deep-Space Probe (Silent)",status:"Last signal Jan 23, 2003",launch:"Mar 2, 1972",agency:"NASA Ames",location:"Heading out of the Solar System toward Aldebaran",what:"First spacecraft to cross the asteroid belt and fly by Jupiter. It carries the famous Pioneer plaque.",why:"It opened the road to the outer solar system.",fun:"The plaque shows a man, a woman and Earth's position among the pulsars."},
+pioneer11:{type:"Deep-Space Probe (Silent)",status:"Contact lost Nov 1995",launch:"Apr 6, 1973",agency:"NASA Ames",location:"Interstellar space, toward Aquila",what:"First spacecraft to fly by Saturn (1979) after passing Jupiter.",why:"It scouted the radiation belts and rings that Voyager used later.",fun:"Its Saturn flyby showed that the planet's rings were safe to cross."},
+vanguard1:{type:"Satellite (Oldest in orbit)",status:"Silent since 1964 — still orbiting",launch:"Mar 17, 1958",agency:"US Naval Research Laboratory",location:"Earth orbit",what:"Its radio stopped in 1964, but the 1.5 kg sphere is still circling Earth.",why:"It revealed that Earth is slightly pear-shaped.",fun:"Nicknamed the \"grapefruit satellite\", it should stay up for another few hundred years."},
+lunokhod1:{type:"Lunar Rover (Lost, then found)",status:"Silent since Sep 1971 · Reflector rediscovered 2010",launch:"Nov 10, 1970 (Luna 17)",agency:"Soviet Union",location:"Sea of Rains, Moon",what:"The first remotely controlled robot to roam another world. It drove 10.5 km and ran for 11 months.",why:"Proved that robots can explore other worlds from Earth.",fun:"In 2010, NASA's LRO spotted it, and scientists bounced a laser off its reflector."},
+apollo11:{type:"Lunar Module Descent Stage",status:"Preserved at Tranquility Base",launch:"Jul 16, 1969 (landing Jul 20)",agency:"NASA",location:"Sea of Tranquility, Moon",what:"The base of the Eagle lunar module is still there. The top half lifted off with Armstrong and Aldrin.",why:"A monument to the first footsteps of humanity on another world.",fun:"The first footprints are still there — the Moon has no wind to erase them."},
+voyager1:{type:"Interstellar Probe · Golden Record copy",status:"Operating in interstellar space (real Voyager 1)",launch:"Sep 5, 1977",agency:"NASA / JPL",location:"Interstellar space",what:"This stand-in carries a copy of the Golden Record: sounds and images of Earth.",why:"A message in a bottle for any civilization that finds it.",fun:"The record carries greetings in 55 languages and 116 images."},
+genesis:{type:"Sample Return Capsule",status:"Crashed 2004 — samples salvaged",launch:"Aug 8, 2001",agency:"NASA / JPL",location:"Utah Test and Training Range, Earth",what:"Genesis collected solar wind particles for 2+ years. In 2004 its parachutes failed and it hit the desert at ~300 km/h.",why:"Scientists still recovered precious samples from the wreckage.",fun:"Teams cleaned shards of ultra-pure collector plates piece by piece."},
+skylab:{type:"Space Station Debris",status:"Reentered 1979 — pieces scattered",launch:"May 14, 1973",agency:"NASA",location:"Earth orbit (debris)",what:"America's first space station fell back to Earth in July 1979, dropping fragments over Western Australia.",why:"It taught us how to plan controlled reentries.",fun:"The town of Esperance fined NASA $400 for littering."},
+voyagerx:{type:"Lost NASA Probe (fictional)",status:"FOUND — The Forgotten World",launch:"1978 (classified)",agency:"NASA — Deep Space Branch",location:"Planet X, among the crystals",what:"Voyager-X went silent in 1981, drawn beyond Neptune toward a mysterious signal. It landed on Planet X and kept transmitting for decades.",why:"It was never lost. It was just waiting for someone to listen.",fun:"Its last log: \"Source of signal found. It is beautiful.\""},
+ruins:{type:"Alien Ruins (fictional)",status:"Unknown origin",launch:"—",agency:"Unknown",location:"Planet X",what:"Pillars and arches arranged around a glowing monolith. The ring pattern matches the orbit of Planet X around the black hole.",why:"Someone built this to watch the black hole — or to remember something.",fun:"The monolith pulses in time with the mystery signal."},
+iss:{type:"Space Station",status:"Operational — dock with E",launch:"First module: Nov 20, 1998",agency:"NASA · Roscosmos · ESA · JAXA · CSA",location:"Earth orbit",what:"A science laboratory crewed continuously since 2000.",why:"It is our test bed for living and working in space long-term — essential for Mars.",fun:"Astronauts see 16 sunrises and sunsets every day.",dockNote:"Dock with E (relative speed < 12 m/s) to refill fuel + hull."},
+gateway:{type:"Lunar Space Station",status:"Planned (Artemis) — operational in this simulation",launch:"Planned 2020s",agency:"NASA · ESA · JAXA · CSA · MBRSC",location:"Lunar orbit",what:"A small station that will orbit the Moon as a staging post for Artemis landings.",why:"It is a stepping stone for Mars, where crews will need a deep-space outpost.",fun:"Its orbit swings between close passes over the lunar north and far over the south pole.",dockNote:"Dock with E to refill."},
+marsbase:{type:"Surface Base (fictional)",status:"Operational",launch:"2040s (imagined)",agency:"NASA Mars Program",location:"Mars surface",what:"Domes, solar farms and rovers running around the clock.",why:"A glimpse of what the first human settlement might look like.",fun:"Rovers out here drive themselves on schedule."},
+dyson:{type:"Megastructure Fragment (fictional)",status:"Half-built — builders unknown",launch:"—",agency:"Unknown",location:"Distant star (-110,000 · 4,000 · 70,000)",what:"A giant ring of solar panels around a star — a concept proposed by physicist Freeman Dyson in 1960.",why:"A Dyson sphere would capture an entire star's energy — a sign of an advanced civilization.",fun:"Astronomers have looked for stars that are oddly dim in visible light but bright in infrared."},
+fuel1:{type:"Fuel Station (fictional)",status:"Automatic · Auto-refuel within 130 u",launch:"—",agency:"NASA Deep Space Logistics",location:"Mars orbit",what:"Orbital fuel depot. Fly close and slow to refuel.",why:"Supply chains in space make exploration beyond Earth possible.",fun:"Refueling in orbit saves a rocket from carrying all its own fuel."},
+fuel2:{type:"Fuel Station (fictional)",status:"Automatic · Auto-refuel within 130 u",launch:"—",agency:"NASA Deep Space Logistics",location:"Saturn orbit",what:"The outermost fuel depot in the system. Just past the rings.",why:"The only filling station between Earth and the dark.",fun:"Saturn's ring particles range from dust grains to house-sized boulders."}
+};
+
+function buildWorld(){
+  /* --- stars + sky --- */
+  starsGroup=new THREE.Group();scene.add(starsGroup);
+  {
+    const N=3000,pos=new Float32Array(N*3),col=new Float32Array(N*3);
+    for(let i=0;i<N;i++){const u=rnd()*2-1,a=rnd()*TAU,r=Math.sqrt(1-u*u);
+      let x=r*Math.cos(a),y=u,z=r*Math.sin(a);
+      pos[i*3]=x*1e5;pos[i*3+1]=y*1e5;pos[i*3+2]=z*1e5;
+      const k=.55+rnd()*.45;col[i*3]=k;col[i*3+1]=k*.92;col[i*3+2]=k*.88}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+    const p=new THREE.Points(g,new THREE.PointsMaterial({size:1.5,sizeAttenuation:false,vertexColors:true,depthTest:false,depthWrite:false,transparent:true}));
+    p.renderOrder=-10;p.frustumCulled=false;starsGroup.add(p);
+  }
+  /* --- Sun --- */
+  sunE=makeBody({id:'sun',name:'The Sun',cat:'star',R:1200,GM:8e6,tex:'sun',emissive:true,fixed:new THREE.Vector3(),deadly:'sun',info:INF.sun,color:'#ffd23f',seg:32});
+  {const c1=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture('rgba(255,240,200,1)','rgba(255,170,60,.45)'),color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));
+   c1.scale.set(6000,6000,1);sunE.node.add(c1);sunCorona.push(c1)}
+  /* --- Planets --- */
+  const P=(id,name,R,g,r,v,ph,tex,extra)=>makeBody(Object.assign({id,name,R,g,tex,orbit:{parent:null,center:ZERO,r:r*2.5,w:v/(r*2.5),phase:ph,incl:0},info:INF[id],hill:true,seed:ph},extra||{}));
+  P('mercury','Mercury',80,3.7,2000,3.0,1.0,'mercury',{tw:256,th:128,color:'#b9a99a',seg:24});
+  P('venus','Venus',190,8.9,3000,2.5,4.2,'venus',{atmoH:90,atmo:{s:.05,c:0xffd9a0,p:3},color:'#f0d090'});
+  earth=P('earth','Earth',200,9.8,4200,2.0,0,'earth',{atmoH:60,atmo:{s:.06,c:0x5aa8ff,p:3},color:'#4da6ff'});
+  {const cl=new THREE.Mesh(new THREE.SphereGeometry(203,32,16),new THREE.MeshLambertMaterial({map:cloudTexture(),transparent:true,depthWrite:false}));earth.node.add(cl);earth.clouds=cl;
+   earth.tick=(t,dt)=>{cl.rotation.y+=dt*.01}}
+  P('moon','The Moon',55,1.6,0,0,0,'moon',{tw:256,th:128,color:'#ccc',seg:24,orbit:{parent:earth,r:700,w:23.7/700,phase:2.0,incl:.35}});
+  mars=P('mars','Mars',110,3.7,6000,1.7,1.745,'mars',{atmoH:25,atmo:{s:.035,c:0xff9a6a,p:4},color:'#ff7a4d'});
+  P('jupiter','Jupiter',700,24.8,10000,1.3,2.6,'jupiter',{gas:true,deadly:'gas',atmoH:180,color:'#e0b080'});
+  P('saturn','Saturn',600,10.4,14000,1.1,5.0,'saturn',{gas:true,deadly:'gas',atmoH:150,rings:{i:1.3,o:2.3,tilt:.45},color:'#e8d49a'});
+  P('uranus','Uranus',350,8.9,18000,.9,.7,'uranus',{gas:true,deadly:'gas',atmoH:90,atmo:{s:.04,c:0x88e8ff,p:3},color:'#8de0ee'});
+  P('neptune','Neptune',340,11.2,22000,.8,3.9,'neptune',{gas:true,deadly:'gas',atmoH:90,atmo:{s:.04,c:0x4a70ff,p:3},color:'#4d6fe8'});
+  byId.moon.hill=true;
+  /* orbit guide lines */
+  [5000,7500,10500,15000,25000,35000,45000,55000].forEach(r=>{
+    const pts=[];for(let i=0;i<=90;i++){const a=i/90*TAU;pts.push(new THREE.Vector3(Math.cos(a)*r,0,Math.sin(a)*r))}
+    const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x2a5a9a,transparent:true,opacity:.28}));l.frustumCulled=false;scene.add(l)});
+
+  /* --- BLACK HOLE GARGANTUA-1 --- */
+  buildBlackHole();
+  /* --- PLANET X --- */
+  pxE=makeBody({id:'planetx',name:'PLANET X — THE FORGOTTEN WORLD',R:300,g:6,tex:'planetx',orbit:{parent:null,center:BH_POS,r:20000,w:79.06/20000,phase:1.2,incl:.1},
+    atmoH:60,atmo:{s:.06,c:0xd070ff,p:3},info:INF.planetx,hill:true,seed:5,color:'#c070ff',tw:256,th:128});
+  pxE.node.add(new THREE.PointLight(0xc080ff,1.2,0,0));
+
+  /* --- ANCHOR HELPERS --- */
+  const gold=LM(0xc9a24a),white=LM(0xdadada),grey=LM(0x8a8f96),dark=LM(0x2a2f38),panelM=LM(0x1d3f8a,0x0a1a40),redM=LM(0xaa3322);
+
+  /* --- Launch pad on Earth --- */
+  {const a=surf(earth,14,180,0),g=new THREE.Group();g.position.copy(a.off);g.quaternion.setFromUnitVectors(Y,a.off.clone().normalize());earth.node.add(g);
+   cyl(18,18,.8,LM(0x555a62),0,.2,0,g,16);cyl(3,3,.9,LM(0xff8a1f,0x552200),0,.3,0,g,12);
+   box(2,26,2,grey,12,13,0,g);box(8,1,1,grey,9,22,0,g);
+   beacon(0xff3030,.02,g,12,27,0)}
+  earth.padOff=surf(earth,14,180,0).off.clone();
+
+  /* --- Mars surface items --- */
+  {// Beagle 2
+    const g=new THREE.Group();cyl(1.1,1.2,.35,white,0,.1,0,g,12);
+    const led=beacon(0xff3030,.03,g,0,1.2,0);
+    makeThing({id:'beagle2',name:'Beagle 2',cat:'lost',node:g,attach:surf(mars,8,-95,-.25),pickR:8,info:INF.beagle2,interact:'recover',color:'#ff7a4d',
+      tick:t=>{led.material.opacity=(Math.sin(t*5)>0)?1:.1}});
+  }
+  {// Mars Polar Lander
+    const g=new THREE.Group();box(2,.5,2,gold,0,1.2,0,g);beacon(0xffc34d,.022,g,0,2,0);
+    makeThing({id:'mpl',name:'Mars Polar Lander',cat:'lost',node:g,attach:surf(mars,-80,-70,.1),pickR:8,info:INF.mpl,interact:'collect',color:'#ffc34d'});
+  }
+  {// Mars Base Alpha
+    const g=new THREE.Group(),domeM=new THREE.MeshLambertMaterial({color:0xcfe6ff,emissive:0x203040,transparent:true,opacity:.85});
+    [[0,0,0,9],[16,0,5,6],[-14,0,6,5.5]].forEach(([x,y,z,r])=>{mesh(new THREE.SphereGeometry(r,16,8,0,TAU,0,PI/2),domeM,x,0,z,g);
+      beacon(0xffe9a0,.02,g,x,r*.5,z)});
+    box(4,2,3,redM,-8,1,-4,g);
+    const at=surf(mars,10,-58,0);
+    makeThing({id:'marsbase',name:'Mars Base Alpha',cat:'mega',node:g,attach:at,pickR:30,info:INF.marsbase,color:'#6fd8ff'});
+  }
+  /* --- Moon surface items --- */
+  {// Apollo 11 descent stage
+    const g=new THREE.Group();cyl(2.2,2.4,1.4,gold,0,1.8,0,g,8);beacon(0x66e0ff,.022,g,0,3.5,0);
+    makeThing({id:'apollo11',name:'Apollo 11 Descent Stage',cat:'lost',node:g,attach:surf(byId.moon,1,23.5,0),pickR:8,info:INF.apollo11,interact:'collect',color:'#e0c070'});
+  }
+  {// Lunokhod 1
+    const g=new THREE.Group();box(3,1.1,2,grey,0,1.2,0,g);beacon(0x66e0ff,.022,g,0,3,0);
+    makeThing({id:'lunokhod1',name:'Lunokhod 1',cat:'lost',node:g,attach:surf(byId.moon,38,-35,0),pickR:8,info:INF.lunokhod1,interact:'collect',color:'#d0d0d0'});
+  }
+  {// Genesis capsule
+    const g=new THREE.Group();cyl(.7,1.3,1.2,LM(0xb0b5bb),0,.35,0,g,12);beacon(0xffc34d,.022,g,0,2.2,0);
+    makeThing({id:'genesis',name:'Genesis Capsule',cat:'lost',node:g,attach:surf(earth,40,165,-.2),pickR:8,info:INF.genesis,interact:'collect',color:'#ffc34d'});
+  }
+  /* --- Free-floating & orbiting lost objects --- */
+  {// Pioneer 10 and 11
+    const mk=(id,name,pos,inf)=>{const g=new THREE.Group();box(1.4,1.2,1.4,gold,0,0,0,g);beacon(0xffc34d,.025,g,0,0,0);
+      makeThing({id,name,cat:'lost',node:g,fixed:pos,pickR:10,info:inf,interact:'collect',color:'#ffc34d',tick:(t,dt)=>{g.rotation.z+=dt*.15}})};
+    mk('pioneer10','Pioneer 10',new THREE.Vector3(30000,2000,18000),INF.pioneer10);
+    mk('pioneer11','Pioneer 11',new THREE.Vector3(-26000,-1500,24000),INF.pioneer11);
+  }
+  {// Voyager 1 Golden Record
+    const g=new THREE.Group();box(1,1,1,dark,0,0,0,g);beacon(0xffd23f,.03,g,0,0,0);
+    makeThing({id:'voyager1',name:"Voyager 1 Golden Record",cat:'lost',node:g,fixed:new THREE.Vector3(60000,5000,-70000),pickR:12,info:INF.voyager1,interact:'collect',color:'#ffd23f',tick:(t,dt)=>{g.rotation.y+=dt*.1}});
+  }
+  {// Vanguard 1
+    const g=new THREE.Group();sph(1,LM(0xc8ccd2),0,0,0,g);beacon(0x66e0ff,.022,g,0,0,0);
+    makeThing({id:'vanguard1',name:'Vanguard 1',cat:'lost',node:g,orbit:{parent:earth,r:440,w:29.85/440,phase:3,incl:.6},pickR:8,info:INF.vanguard1,interact:'collect',color:'#c8ccd2',tick:(t,dt)=>{g.rotation.y+=dt*.5}});
+  }
+  {// Skylab debris
+    const g=new THREE.Group();box(3,.5,2,LM(0x9aa0a8),0,0,0,g);beacon(0xff8a1f,.025,g,0,0,0);
+    makeThing({id:'skylab',name:'Skylab Debris',cat:'lost',node:g,orbit:{parent:earth,r:265,w:38.5/265,phase:5,incl:.9},pickR:26,info:INF.skylab,interact:'collect',color:'#ff8a1f',tick:(t,dt)=>{g.rotation.x+=dt*.2}});
+  }
+  /* --- Mega structures --- */
+  {// ISS
+    const g=new THREE.Group();box(30,1,1,white,0,0,0,g);beacon(0x44ff88,.02,g,0,0,0);
+    makeThing({id:'iss',name:'International Space Station (ISS)',cat:'mega',node:g,orbit:{parent:earth,r:330,w:34.5/330,phase:.5,incl:.7},pickR:45,info:INF.iss,interact:'dock',dock:true,color:'#6fd8ff',tick:(t,dt)=>{g.rotation.y+=dt*.04}});
+  }
+  {// Lunar Gateway
+    const g=new THREE.Group();box(15,1,1,white,0,0,0,g);beacon(0x44ff88,.02,g,0,0,0);
+    makeThing({id:'gateway',name:'Lunar Gateway Station',cat:'mega',node:g,orbit:{parent:byId.moon,r:135,w:5.99/135,phase:1,incl:1.3},pickR:24,info:INF.gateway,interact:'dock',dock:true,color:'#6fd8ff',tick:(t,dt)=>{g.rotation.y+=dt*.1}});
+  }
+  const station=(id,name,parent,r,v,ph,inc,inf)=>{
+    const g=new THREE.Group();mesh(new THREE.TorusGeometry(16,1.6,6,24),LM(0x889aa8,0x221100),0,0,0,g).rotation.x=PI/2;beacon(0x44ff88,.03,g,0,8,0);
+    return makeThing({id,name,cat:'mega',node:g,orbit:{parent,r,w:v/r,phase:ph,incl:inc},pickR:26,info:inf,interact:'dock',dock:true,refuel:true,color:'#4dffa6',tick:(t,dt)=>{g.rotation.y+=dt*.2}});
+  };
+  station('fuel1','Fuel Station ARES',mars,650,13.1,0,.5,INF.fuel1);
+  station('fuel2','Fuel Station CRONUS',byId.saturn,4250,46.9,0,.4,INF.fuel2);
+  buildDyson(gold);
+  /* --- Planet X surface: ruins & Voyager-X --- */
+  {const g=new THREE.Group();box(4,20,4,LM(0x3a2a5a,0x2a1050),0,10,0,g);beacon(0xc080ff,.05,g,0,22,0);
+   makeThing({id:'ruins',name:'Alien Ruins',cat:'mega',node:g,attach:surf(pxE,8,52,0),pickR:36,info:INF.ruins,secret:true,color:'#c080ff'})}
+  {const g=new THREE.Group();box(2.2,1.6,2.2,gold,0,.8,0,g);beacon(0x66ffee,.04,g,0,3.5,0);
+   makeThing({id:'voyagerx',name:'VOYAGER-X',cat:'lost',node:g,attach:surf(pxE,14,32,-.3),pickR:9,info:INF.voyagerx,interact:'recover',secret:true,color:'#66ffee'})}
+
+  /* --- lookup lists --- */
+  gravBodies=ents.filter(e=>e.GM>0);colBodies=ents.filter(e=>e.isBody&&e.R>0);hillBodies=ents.filter(e=>e.hill);
+  /* highlight sprite */
+  hlSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:ringIconTexture(),color:0x66ddff,transparent:true,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending}));
+  hlSprite.visible=false;hlSprite.renderOrder=20;scene.add(hlSprite);
+  buildWarpLines();
+  updateEnts(0);syncNodes();
+}
+
+function buildBlackHole(){
+  const g=new THREE.Group();g.position.copy(BH_POS);scene.add(g);
+  const hz=new THREE.Mesh(new THREE.SphereGeometry(BH_R,32,16),new THREE.MeshBasicMaterial({color:0x000000}));g.add(hz);
+  const tilt=new THREE.Group();tilt.rotation.set(.22,0,.12);g.add(tilt);
+  const IN=460,OUT=2400;
+  bhDisk=new THREE.Mesh(new THREE.RingGeometry(IN,OUT,64,1),new THREE.ShaderMaterial({
+    uniforms:{uT:{value:0}},side:THREE.DoubleSide,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:`varying vec2 vP;void main(){vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform float uT;varying vec2 vP;
+      void main(){float r=length(vP);float t=(r-${IN.toFixed(1)})/${(OUT-IN).toFixed(1)};if(t<0.||t>1.)discard;
+        vec3 col=mix(vec3(1.,.96,.88),vec3(1.,.48,.12),t);
+        gl_FragColor=vec4(col*((1.-t)*1.5),1.);}`}));
+  bhDisk.rotation.x=-PI/2;tilt.add(bhDisk);
+  const mkGlow=(col,sc,op)=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture('rgba(255,255,255,.9)',col),transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending}));s.scale.set(sc,sc,1);g.add(s);return s};
+  bhGlow1=mkGlow('rgba(150,60,255,.55)',16000,.6);bhGlow2=mkGlow('rgba(255,150,60,.5)',5000,.7);
+  const N=400,pos=new Float32Array(N*3),st=[];
+  for(let i=0;i<N;i++)st.push({r:IN*.9+Math.pow(rnd(),1.6)*5500,a:rnd()*TAU,y:(rnd()-.5)*60});
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  bhParticles=new THREE.Points(pg,new THREE.PointsMaterial({color:0xffc890,size:2,sizeAttenuation:false,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));
+  bhParticles.frustumCulled=false;bhParticles.userData.st=st;tilt.add(bhParticles);
+  bhE={id:'bh',name:'GARGANTUA-1',cat:'blackhole',R:BH_R,GM:BH_GM,g:BH_GM/(BH_R*BH_R),pos:BH_POS.clone(),vel:new THREE.Vector3(),isBody:true,deadly:'bh',static:true,fixed:BH_POS,node:g,proxies:[],pickR:700,info:INF.bh,color:'#b27cff'};
+  addProxy(bhE,700);registerEnt(bhE);
+}
+function updateBH(dtR,t){
+  bhDisk.material.uniforms.uT.value=t;
+  const st=bhParticles.userData.st,pa=bhParticles.geometry.attributes.position.array;
+  for(let i=0;i<st.length;i++){const p=st[i];p.a+=dtR*(2400/Math.pow(p.r,1.05))*.5;p.r-=dtR*(30+(6000/p.r)*18);
+    if(p.r<430){p.r=3500+rnd()*2500;p.a=rnd()*TAU}
+    pa[i*3]=Math.cos(p.a)*p.r;pa[i*3+1]=Math.sin(p.a)*p.r;pa[i*3+2]=p.y*(p.r/3000)}
+  bhParticles.geometry.attributes.position.needsUpdate=true;
+  bhParticles.rotation.x=-PI/2;
+  const d=S.pos.distanceTo(BH_POS);
+  bhGlow1.material.opacity=.65*smooth(5000,25000,d);bhGlow2.material.opacity=.7*smooth(1500,12000,d);
+}
+function buildDyson(gold){
+  const g=new THREE.Group(),R=10000;
+  const star=new THREE.Mesh(new THREE.SphereGeometry(2800,32,16),new THREE.MeshBasicMaterial({map:planetTexture('star',128,64,3),color:0xdde8ff}));g.add(star);
+  const pl=new THREE.PointLight(0xdbe8ff,6e8,40000,2);g.add(pl);
+  g.rotation.x=.25;
+  const e=makeThing({id:'dyson',name:'Dyson Sphere Fragment',cat:'mega',node:g,fixed:DYSON_POS,pickR:3200,info:INF.dyson,color:'#ffd23f',noProxy:true});
+  addProxy(e,3200,g);
+}
+
+/* ----- warp streaks ----- */
+let wlines,wlPos,wlBase;
+function buildWarpLines(){
+  const N=120;wlPos=new Float32Array(N*6);wlBase=[];
+  for(let i=0;i<N;i++){const a=rnd()*TAU,r=6+Math.pow(rnd(),.7)*140;wlBase.push({x:Math.cos(a)*r,y:Math.sin(a)*r,z:rnd()*500})}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(wlPos,3));
+  wlines=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0xaee0ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false}));
+  wlines.frustumCulled=false;wlines.renderOrder=8;camera.add(wlines);
+}
+function updateWarpLines(w,t){
+  wlines.material.opacity=w*.9;wlines.visible=w>.01;if(!wlines.visible)return;
+  for(let i=0;i<wlBase.length;i++){const b=wlBase[i],z=((b.z+t*(300+w*900))%500)-500;
+    wlPos[i*6]=b.x;wlPos[i*6+1]=b.y;wlPos[i*6+2]=z;wlPos[i*6+3]=b.x;wlPos[i*6+4]=b.y;wlPos[i*6+5]=z-(10+w*220)}
+  wlines.geometry.attributes.position.needsUpdate=true;
+}
+
+/* ----- per-frame entity updates ----- */
+const _pa=new THREE.Vector3();
+function updateEnts(t){
+  for(const e of ents){if(e.static)continue;posAt(e,t,e.pos);posAt(e,t+.05,_pa);e.vel.subVectors(_pa,e.pos).multiplyScalar(20)}
+}
+function syncNodes(){for(const e of ents)if(!e.attach&&!e.static)e.node.position.copy(e.pos)}
+const dName=e=>e.id==='bh'&&!S.discovered.bh?'??? UNKNOWN SIGNAL':(e.id==='planetx'&&!S.discovered.planetx?'UNKNOWN OBJECT':e.name);
+const isHidden=e=>(e.id==='planetx'||e.secret)&&!S.discovered.planetx;
+
+/* ---------- 7. INPUT ---------- */
+function lockMouse(){try{const p=canvas.requestPointerLock();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+function unlockMouse(){S.suppress=true;try{if(document.pointerLockElement)document.exitPointerLock()}catch(e){}setTimeout(()=>{S.suppress=false},250)}
+document.addEventListener('pointerlockchange',()=>{
+  S.locked=document.pointerLockElement===canvas;
+  if(!S.locked){S.lastUnlock=performance.now();if(S.ui==='play'&&!S.suppress&&S.wantLock&&!S.tabletEnt)openSettings()}
+});
+addEventListener('mousemove',e=>{
+  S.cx=e.clientX;S.cy=e.clientY;
+  if(S.locked){
+    const sens=0.0022*settings.sens;
+    S.pendYaw-=e.movementX*sens;
+    S.pendPitch-=e.movementY*sens;
+  }
+});
+canvas.addEventListener('mousedown',e=>{
+  if(S.ui!=='play')return;
+  if(e.button===0){if(S.wantLock&&!S.locked){lockMouse();return}inspectClick()}
+});
+addEventListener('mousedown',e=>{if(e.button===2){if(S.tabletEnt)closeTablet();$('mapPop').classList.add('hidden')}});
+addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('wheel',e=>{if(S.ui==='play'&&!e.target.closest('#tablet'))S.radar=clamp(S.radar*(e.deltaY>0?1.25:.8),500,80000)},{passive:true});
+const GAMEKEYS=new Set(['KeyW','KeyA','KeyS','KeyD','KeyR','KeyF','KeyQ','KeyZ','KeyX','Space','ShiftLeft','ShiftRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab']);
+addEventListener('keydown',e=>{
+  if(e.target&&e.target.tagName==='INPUT'&&e.target.type==='text'){if(e.code==='Escape')e.target.blur();return}
+  if(GAMEKEYS.has(e.code)&&(S.ui==='play'||S.ui==='warp'))e.preventDefault();
+  S.keys[e.code]=true;
+  if(e.repeat)return;
+  const c=e.code;
+  if(c==='Escape'){
+    if(performance.now()-S.lastUnlock<150&&S.ui==='settings')return;
+    if(S.tabletEnt&&S.ui==='play'){closeTablet();return}
+    if(S.ui==='play')openSettings();else if(S.ui==='settings')closeSettings();else if(S.ui==='map')closeMap();else if(S.ui==='warp')closeWarpMenu();
+    return;
+  }
+  if(c==='KeyM'){if(S.ui==='play')openMap();else if(S.ui==='map')closeMap();return}
+  if(c==='KeyJ'){if(S.ui==='play')openWarpMenu();else if(S.ui==='warp')closeWarpMenu();return}
+  if(S.ui!=='play')return;
+  if(c==='KeyP'){S.physPanel=!S.physPanel;$('physics').classList.toggle('hidden',!S.physPanel)}
+  else if(c==='KeyO')toggleOrbit();
+  else if(c==='KeyE')interact();
+  else if(c==='Tab'){S.wantLock=!S.wantLock;if(S.wantLock)lockMouse();else unlockMouse()}
+  else if(c.startsWith('Digit')){const d=+c.slice(5);S.throttle=(d===0?10:d)/10;$('throttle').value=S.throttle*100}
+});
+addEventListener('keyup',e=>{S.keys[e.code]=false});
+addEventListener('blur',()=>{S.keys={}});
+$('throttle').addEventListener('input',e=>{S.throttle=e.target.value/100;e.target.blur()});
+
+/* ---------- 8. PHYSICS ---------- */
+const _v=new THREE.Vector3(),_v2=new THREE.Vector3(),_v3=new THREE.Vector3(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_n=new THREE.Vector2(),_aT=new THREE.Vector3(),_ab=new THREE.Vector3();
+function refBody(){
+  let best=null,bv=1;
+  for(const b of hillBodies){const d=S.pos.distanceTo(b.pos)/(b.R*14);if(d<bv){bv=d;best=b}}
+  if(best){S.ref=best;S.refName=best.name;S.refVel.copy(best.vel)}
+  else if(S.bhDist<30000){S.ref=bhE;S.refName='Gargantua';S.refVel.set(0,0,0)}
+  else{S.ref=sunE;S.refName='Sun';S.refVel.set(0,0,0)}
+}
+function orbitRef(){
+  const b=S.ref;if(!b)return null;const d=S.pos.distanceTo(b.pos);
+  if(b===sunE)return d<30000?b:null;if(b===bhE)return d<30000?b:null;
+  return d<b.R*14?b:null;
+}
+function toggleOrbit(){
+  if(S.orbit){S.orbit=false;toast('ORBIT MODE OFF');return}
+  if(S.landed){toast('ORBIT MODE: LIFT OFF FIRST','warn');return}
+  const b=orbitRef();if(!b){toast('ORBIT MODE: NO BODY IN RANGE','warn');return}
+  const d=S.pos.distanceTo(b.pos);if(d<b.R*1.1){toast('ORBIT MODE: TOO CLOSE','warn');return}
+  S.orbit=true;S.orbitR=Math.max(d,b.R*1.25+60);S.orbitBody=b;toast('ORBIT LOCK · '+b.name.toUpperCase()+' · r='+fmt(S.orbitR)+' u','good');AUD.blip();
+}
+function physics(dtR){
+  const dBH=S.pos.distanceTo(BH_POS);S.bhDist=dBH;
+  const tsT=dBH<1000?lerp(.15,1,clamp((dBH-BH_R)/(1000-BH_R),0,1)):1;
+  S.timeScale=lerp(S.timeScale,tsT,1-Math.exp(-dtR*3));
+  const dt=dtR*S.timeScale;
+  S.simTime+=dt;S.playTime+=dt;S.hitCd-=dtR;if(S.warpCd>0)S.warpCd-=dtR;
+  updateEnts(S.simTime);refBody();
+  
+  /* WASD Strict and Clean Rotation & Stabilization */
+  const k=S.keys;
+  let yaw=S.pendYaw, pitch=S.pendPitch;
+  S.pendYaw = 0; S.pendPitch = 0;
+  
+  yaw += ((k.ArrowLeft?1:0)-(k.ArrowRight?1:0))*1.3*dtR;
+  pitch += ((k.ArrowUp?1:0)-(k.ArrowDown?1:0))*1.3*dtR;
+  const roll = ((k.KeyQ?1:0)-(k.KeyZ?1:0))*1.4*dtR;
+
+  // Auto-stabilizer: when no rotation input, damp angular velocities / orientation drift smoothly
+  if (Math.abs(yaw) < 0.0001 && Math.abs(pitch) < 0.0001 && Math.abs(roll) < 0.0001) {
+    // Gentle damping towards zero rotational delta
+    _e.setFromQuaternion(S.quat, 'YXZ');
+    _e.z *= 0.92; // damp roll
+    S.quat.setFromEuler(_e);
+  }
+
+  if(S.warp){warpStep(dtR);return}
+  _q.setFromEuler(_e.set(pitch, yaw, roll, 'YXZ'));
+  S.quat.multiply(_q).normalize();
+
+  /* Precise WASD Thrust Controls: W = Forward, S = Brake/Reverse, A/D = Strafe Left/Right, Space = Up */
+  S.ab=!!(k.ShiftLeft||k.ShiftRight);
+  let ux=(k.KeyD?1:0)-(k.KeyA?1:0);
+  let uy=(k.Space?1:0)-(k.KeyF?1:0);
+  let uz=(k.KeyS?1:0)-(k.KeyW?1:0); // W is forward (-z in local space), S is backward (+z)
+  
+  S.brake=!!k.KeyX;
+  const ul=Math.hypot(ux,uy,uz);if(ul>1){ux/=ul;uy/=ul;uz/=ul}
+  if(S.fuel<=0){ux=uy=uz=0}
+  
+  // Instant snappy movement response with high smoothing interpolation
+  _v.set(ux,uy,uz);
+  S.thr.lerp(_v,1-Math.exp(-dtR*12));
+  
+  const mag=MAX_ACC*S.throttle*(S.ab?AB_MULT:1);
+  _aT.copy(S.thr).multiplyScalar(mag).applyQuaternion(S.quat);
+  S.thrustN=_aT.length()*SHIP_MASS;
+  
+  const hasIn=ul>0;
+  if(hasIn&&S.orbit&&S.thr.length()>.15){S.orbit=false;toast('ORBIT MODE OFF — MANUAL THRUST')}
+  const arcade=settings.physics==='arcade',gS=arcade?.5:1;
+  let fuelUse=.6*S.thr.length()*S.throttle*(S.ab?3:1);
+  
+  /* landed */
+  if(S.landed){
+    const b=S.landed;S.pos.copy(b.pos).add(S.landOff);S.vel.copy(b.vel);S.acc.set(0,0,0);S.gAcc.set(0,0,0);
+    _v.copy(S.landOff).normalize();const aN=_aT.dot(_v);
+    if(aN>b.g*gS*1.05+.4&&S.fuel>0){S.landed=null;S.vel.addScaledVector(_v,1.5);S.pos.addScaledVector(_v,1.2);toast('LIFT OFF','good')}
+    S.fuel=Math.max(0,S.fuel-fuelUse*dt);
+    if(b===earth&&S.fuel<100){S.fuel=Math.min(100,S.fuel+8*dt);S.refuel='REFUELING AT EARTH'}else S.refuel='';
+    missions();return;
+  }
+  
+  /* acceleration sum & Full Stop Key X */
+  S.acc.copy(_aT);
+  if(S.brake||k.KeyX){
+    // Full Stop / Stabilize: actively kill relative velocity towards reference
+    _ab.copy(S.refVel).sub(S.vel);const l=_ab.length();
+    if(l<.1){S.vel.copy(S.refVel)}else{_ab.multiplyScalar(4);_ab.clampLength(0,MAX_ACC*3);S.acc.add(_ab);fuelUse+=.8*(l/MAX_ACC)*dt;}
+  }
+  
+  if(S.orbit){const b=S.orbitBody;
+    if(!b||S.pos.distanceTo(b.pos)>(b===sunE||b===bhE?32000:b.R*16)){S.orbit=false}
+    else{_ab.subVectors(S.pos,b.pos);const d=_ab.length();const rh=_v2.copy(_ab).divideScalar(d);
+      const vr=_v3.subVectors(S.vel,b.vel);const vt=vr.clone().addScaledVector(rh,-vr.dot(rh));let tl=vt.length();
+      if(tl<.5){vt.crossVectors(Y,rh);if(vt.lengthSq()<.01)vt.set(1,0,0).cross(rh);tl=vt.length()}vt.divideScalar(tl);
+      const vc=Math.sqrt(b.GM/S.orbitR);const vDes=vt.multiplyScalar(vc).addScaledVector(rh,(S.orbitR-d)*.12);
+      const a=vDes.sub(vr).multiplyScalar(1.2);a.clampLength(0,25);S.acc.add(a);fuelUse+=.04*(a.length()/25)}}
+      
+  /* gravity */
+  S.gAcc.set(0,0,0);
+  for(const b of gravBodies){_v.subVectors(b.pos,S.pos);const dist=_v.length(),d2=Math.max(dist*dist,b.R*b.R),a=b.GM/d2;S.gAcc.addScaledVector(_v,a/Math.max(dist,1e-6))}
+  S.acc.addScaledVector(S.gAcc,gS);
+  
+  /* atmosphere drag */
+  S.inAtmo=false;
+  for(const b of colBodies){if(!b.atmoH)continue;const dist=S.pos.distanceTo(b.pos),h=dist-b.R;
+    if(h<b.atmoH){const dens=Math.pow(1-h/b.atmoH,2);_v.subVectors(S.vel,b.vel);const sp=_v.length();S.acc.addScaledVector(_v,-(.35+.004*sp)*dens);S.inAtmo=true}}
+    
+  /* integrate velocity and clamp max speed to ensure player never loses control */
+  S.vel.addScaledVector(S.acc,dt);
+  const maxAllowedSpeed = S.ab ? 4000 : 1500;
+  if(S.vel.length() > maxAllowedSpeed) {
+    S.vel.clampLength(0, maxAllowedSpeed);
+  }
+  
+  S.pos.addScaledVector(S.vel,dt);
+  
+  /* world bounds */
+  const lim=WORLD/2;for(const ax of ['x','y','z']){if(Math.abs(S.pos[ax])>lim){S.pos[ax]=Math.sign(S.pos[ax])*lim;S.vel[ax]*=-.3;toast('WORLD BOUNDARY','warn')}}
+  
+  /* collisions */
+  for(const b of colBodies){
+    _v.subVectors(S.pos,b.pos);const d=_v.length();
+    if(b===bhE){if(d<BH_R){gameOver('bh');return}continue}
+    const lim2=b.R+SHIP_R*.7;
+    if(d<lim2){
+      if(b.deadly){gameOver(b.deadly);return}
+      _v.divideScalar(d);const rel=_v2.subVectors(S.vel,b.vel),speed=rel.length(),vn=rel.dot(_v);
+      if(speed<5){
+        S.landed=b;S.landOff.copy(_v).multiplyScalar(lim2);S.vel.copy(b.vel);S.orbit=false;
+        if(b.id==='earth' && S.flags.beagle && !S.flags.won){ win(); return; }
+        toast('SAFE LANDING · '+b.name.toUpperCase(),'good');AUD.thud();S.shake=Math.max(S.shake,.15);
+      }
+      else if(S.hitCd<=0){
+        S.hull-=20;S.shake=1;S.hitCd=.6;AUD.thud();flashDmg();alertFor('COLLISION! HULL −20%',2.5);S.orbit=false;
+        rel.addScaledVector(_v,-(1.3)*Math.min(vn,0));rel.multiplyScalar(.6);S.vel.copy(b.vel).add(rel);
+        S.pos.copy(b.pos).addScaledVector(_v,lim2+.6);
+        if(S.hull<=0){S.hull=0;gameOver('hull');return}
+      }else{S.pos.copy(b.pos).addScaledVector(_v,lim2+.6)}
+    }
+  }
+  
+  /* fuel */
+  S.fuel=Math.max(0,S.fuel-fuelUse*dt);S.refuel='';
+  {const alt=S.pos.distanceTo(earth.pos)-earth.R;_v.subVectors(S.vel,earth.vel);
+    if(alt<350&&_v.length()<80&&S.fuel<100){S.fuel=Math.min(100,S.fuel+5*dt);S.refuel='REFUELING NEAR EARTH'}}
+  for(const e of ents){if(!e.refuel)continue;if(S.pos.distanceTo(e.pos)<130&&_v.subVectors(S.vel,e.vel).length()<25){
+    if(S.fuel<100||S.hull<100){S.fuel=Math.min(100,S.fuel+12*dt);S.hull=Math.min(100,S.hull+3*dt);S.refuel='REFUELING · '+e.name.toUpperCase()}}}
+  missions();
+}
+
+/* ---------- 9. MISSIONS / INTERACTION ---------- */
+function addScore(n){S.score+=n}
+function chimeToast(msg,cls){toast(msg,cls||'good');AUD.chime()}
+function missions(){
+  if(!S.flags.launched&&!S.landed&&S.pos.distanceTo(earth.pos)-earth.R>500){
+    S.flags.launched=true;addScore(200);chimeToast('MISSION 1 COMPLETE — LAUNCH FROM EARTH');S.target='mars';toast('NEW TARGET: MARS — find Beagle 2 (Isidis Planitia)','warn');refreshMission()}
+  if(S.flags.beagle&&!S.flags.won&&S.landed&&S.landed.id==='earth')win();
+  if(!S.discovered.bh&&S.bhDist<10000){S.discovered.bh=true;addScore(500);chimeToast('GARGANTUA-1 — BLACK HOLE DISCOVERED!  +500','secret');AUD.thump(1);refreshMission()}
+  if(!S.discovered.planetx&&pxE&&S.pos.distanceTo(pxE.pos)<5000){S.discovered.planetx=true;addScore(500);chimeToast('PLANET X — THE FORGOTTEN WORLD DISCOVERED!  +500','secret');refreshMission()}
+}
+function interactables(){
+  const out=[];
+  for(const e of ents){if(!e.interact||isHidden(e))continue;const d=S.pos.distanceTo(e.pos);if(d<100)out.push([e,d])}
+  return out.sort((a,b)=>a[1]-b[1]);
+}
+function interact(){
+  const l=interactables();if(!l.length){toast('NOTHING WITHIN RANGE (100 u) TO COLLECT / DOCK','warn');return}
+  const e=l[0][0];
+  if(e.interact==='dock'){
+    const rs=_v.subVectors(S.vel,e.vel).length();
+    if(rs>12){toast('DOCKING FAILED — RELATIVE SPEED '+rs.toFixed(0)+' m/s (MAX 12)','bad');AUD.alarm();return}
+    S.fuel=100;S.hull=100;S.vel.copy(e.vel);chimeToast('DOCKED · '+e.name.toUpperCase()+' · FUEL & HULL RESTORED');
+    if(!S.docked[e.id]){S.docked[e.id]=true;addScore(75)}return;
+  }
+  if(S.collected[e.id]){toast('ALREADY RECOVERED','warn');return}
+  S.collected[e.id]=true;S.found[e.id]=true;
+  if(e.id==='beagle2'){
+    S.flags.beagle=true;addScore(1000);
+    chimeToast('BEAGLE 2 RECOVERED! SUCCESS!', 'good');
+    // Satisfying success animation trigger & notification
+    const f=$('flash');f.style.transition='none';f.style.opacity=.8;requestAnimationFrame(()=>{f.style.transition='opacity 1s';f.style.opacity=0});
+    toast('MISSION COMPLETE: BEAGLE 2 SECURED! RETURN TO EARTH.', 'good');
+    toast('NEW TARGET: EARTH — Land safely to complete Operation Beagle.', 'warn');
+    S.target='earth';
+  }
+  else if(e.id==='voyagerx'){
+    if(!S.discovered.bh){S.discovered.bh=true;addScore(500)}
+    addScore(1500);S.flags.secretDone=true;chimeToast('VOYAGER-X RECOVERED  +1500','secret');setTimeout(secretEnding,1400)}
+  else{addScore(250);chimeToast(e.name.toUpperCase()+' COLLECTED  +250')}
+  refreshMission();saveGame();
+}
+function win(){
+  S.flags.won=true;addScore(2000);S.over=true;
+  $('winStats').textContent='FINAL SCORE '+fmt(S.score)+' · MISSION TIME '+Math.floor(S.playTime/60)+'m '+Math.floor(S.playTime%60)+'s · SIDE OBJECTS '+sideCount()+'/9';
+  setUI('win');AUD.chime();refreshMission();saveGame();
+}
+function secretEnding(){
+  $('secStats').textContent='FINAL SCORE '+fmt(S.score)+' · SIDE OBJECTS '+sideCount()+'/9 · MISSION TIME '+Math.floor(S.playTime/60)+'m '+Math.floor(S.playTime%60)+'s';
+  setUI('secret');saveGame();
+}
+const SIDE=['mpl','pioneer10','pioneer11','vanguard1','lunokhod1','apollo11','voyager1','genesis','skylab'];
+const sideCount=()=>SIDE.filter(id=>S.found[id]).length;
+function gameOver(kind){
+  if(S.over)return;S.over=true;S.orbit=false;
+  const T={hull:['HULL BREACH','Your ship is destroyed. Hull integrity reached 0%.',''],
+    bh:['YOU CROSSED THE EVENT HORIZON','Spaghettification — Even light cannot escape.','bh'],
+    sun:['INCINERATED','You flew into the Sun. Metal does not survive 5,500 °C.',''],
+    gas:['CRUSHED','Gas giants have no surface — only deeper, hotter, denser air. Your ship was crushed.','']}[kind]||['GAME OVER','',''];
+  $('goTitle').textContent=T[0];$('goText').textContent=T[1];$('gameover').classList.toggle('bh',T[2]==='bh');
+  setUI('dead');AUD.thud();
+}
+function respawn(){
+  S.hull=100;S.fuel=100;S.over=false;S.vel.set(0,0,0);S.orbit=false;S.timeScale=1;S.thr.set(0,0,0);
+  updateEnts(S.simTime);syncNodes();placeOnPad();setUI('play');toast('RESPAWNED AT EARTH LAUNCH PAD','good');saveGame();
+}
+function placeOnPad(){
+  const n=earth.padOff.clone().normalize();S.landed=earth;S.landOff.copy(n).multiplyScalar(earth.R+SHIP_R*.7);
+  S.pos.copy(earth.pos).add(S.landOff);S.vel.copy(earth.vel);
+  const toMars=_v.subVectors(mars.pos,earth.pos).normalize(),fwd=n.clone().multiplyScalar(.78).addScaledVector(toMars,.62).normalize();
+  S.quat.setFromRotationMatrix(new THREE.Matrix4().lookAt(ZERO,fwd,n));
+}
+function newGame(){
+  Object.assign(S,{hull:100,fuel:100,throttle:.5,score:0,simTime:0,playTime:0,over:false,target:null,orbit:false,warp:null,warpCd:0,timeScale:1});
+  S.flags={launched:false,beagle:false,won:false,secretDone:false};S.found={};S.collected={};S.discovered={};S.docked={};
+  S.thr.set(0,0,0);S.pendYaw=S.pendPitch=0;
+  updateEnts(0);syncNodes();placeOnPad();
+}
+function loadGame(sv){
+  Object.assign(S,{hull:sv.hull,fuel:sv.fuel,throttle:sv.throttle||.5,score:sv.score||0,simTime:sv.simTime||0,playTime:sv.playTime||0,target:sv.target,over:false,orbit:false,warp:null,timeScale:1});
+  S.flags=Object.assign({launched:false,beagle:false,won:false,secretDone:false},sv.flags);S.found=sv.found||{};S.collected=sv.collected||{};S.discovered=sv.discovered||{};S.docked=sv.docked||{};
+  if(sv.settings)Object.assign(settings,sv.settings);
+  updateEnts(S.simTime);syncNodes();
+  S.pos.fromArray(sv.pos);S.vel.fromArray(sv.vel);S.quat.fromArray(sv.quat);S.thr.set(0,0,0);
+  S.landed=sv.landed?byId[sv.landed]:null;if(S.landed)S.landOff.fromArray(sv.landOff);
+}
+
+/* ---------- 10. HUD ---------- */
+function toast(msg,cls){const d=document.createElement('div');d.className='toast '+(cls||'');d.textContent=msg;$('toasts').appendChild(d);
+  while($('toasts').children.length>4)$('toasts').firstChild.remove();setTimeout(()=>d.remove(),4300)}
+function flashDmg(){const d=$('dmg');d.style.transition='none';d.style.opacity=.9;requestAnimationFrame(()=>{d.style.transition='opacity 1.2s';d.style.opacity=0})}
+function alertFor(msg,sec){S.alertMsg=msg;S.alertT=sec}
+function refreshMission(){
+  const f=S.flags,ck=(ok,t,c)=>`<div class="ck ${ok?'ok':''} ${c||''}"><i>${ok?'✔':'○'}</i><span>${t}</span></div>`;
+  let h=`<div class="mt">OPERATION BEAGLE</div>`;
+  h+=ck(f.launched,'M1 · Launch from Earth')+ck(f.beagle,'M2 · Journey to Mars — recover Beagle 2')+ck(f.won,'M3 · Return to Earth');
+  h+=`<div class="st">CHECKLIST</div>`;
+  if(!f.launched)h+=ck(false,'Hold W — lift off','sub')+ck(false,'Reach 500 u altitude','sub');
+  else if(!f.beagle)h+=ck(S.pos.distanceTo(mars.pos)<3000,'Reach Mars','sub')+ck(!!S.found.beagle2,'Locate Beagle 2 (blinking light)','sub')+ck(false,'Press E within 100 u to recover','sub');
+  else if(!f.won)h+=ck(true,'Beagle 2 on board','sub')+ck(false,'Fly home — target Earth','sub')+ck(false,'Land safely (< 5 m/s)','sub');
+  else h+=ck(true,'Main mission complete','sub');
+  const sec=f.won||S.discovered.bh;
+  h+=`<div class="st" style="color:#c9a2ff">SECRET</div>`;
+  h+=ck(f.secretDone,sec?'M4 · THE UNKNOWN SIGNAL — go to ???':'M4 · ??? CLASSIFIED','secret');
+  if(sec){h+=ck(!!S.discovered.bh,'Discover the black hole','sub secret')+ck(!!S.discovered.planetx,S.discovered.planetx?'Find Planet X':'Find ???','sub secret')+ck(!!S.collected.voyagerx,S.discovered.planetx?'Recover Voyager-X':'???','sub secret')}
+  h+=`<div class="st">SIDE MISSIONS ${sideCount()}/9</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:0 8px">`;
+  SIDE.forEach(id=>{h+=`<div class="ck ${S.found[id]?'ok':''}" style="font-size:9px"><i>${S.found[id]?'✔':'○'}</i>${byId[id].name}</div>`});
+  h+=`</div><div class="st">SCORE <span style="color:#fff">${fmt(S.score)}</span></div>`;
+  $('mission').innerHTML=h;
+}
+let hudT=0;
+function hudUpdate(dtR){
+  hudT-=dtR;
+  $('hullBar').style.width=S.hull+'%';$('fuelBar').style.width=S.fuel+'%';
+  $('hullTxt').textContent=Math.round(S.hull)+'%';$('fuelTxt').textContent=Math.round(S.fuel)+'%'+(S.refuel?' ▲':'');
+  updateWaypoint();updateMarkers();
+  if(hudT>0)return;hudT=.1;
+  const vRel=_v.subVectors(S.vel,S.refVel),spd=vRel.length(),spdAbs=S.vel.length();
+  
+  // Real distance in KM/U calculation based on scale
+  const distInKm = (spd * 12.5).toFixed(0); 
+  
+  $('thrTxt').textContent=Math.round(S.throttle*100)+'%'+(S.ab?' · BOOST':'');
+  $('vel').innerHTML=`<b>${spd.toFixed(1)}</b> m/s <span style="opacity:.7">rel. ${S.refName}</span><br>DIST KM: <b>${fmt(distInKm)} km</b><br>VEL ${S.vel.x.toFixed(0)} · ${S.vel.y.toFixed(0)} · ${S.vel.z.toFixed(0)} &nbsp; |v| ${spdAbs.toFixed(0)}<br>${S.landed?'<span style="color:#4dffa6">LANDED</span>':S.orbit?'<span style="color:#6fd8ff">ORBIT LOCK</span>':S.inAtmo?'<span style="color:#ffc34d">IN ATMOSPHERE · DRAG</span>':'<span style="opacity:.7">COASTING</span>'}`;
+  const tg=S.target?byId[S.target]:null;
+  if(tg){const d=S.pos.distanceTo(tg.pos),cl=_v.subVectors(S.vel,tg.vel).dot(_v2.subVectors(tg.pos,S.pos).normalize());
+    $('tgt').innerHTML=`TARGET<br><b>${dName(tg)}</b><br>DIST ${fmt(d)} u<br>${cl>1?'ETA '+fmtT(d/cl):'—'}`}
+  else $('tgt').innerHTML='TARGET<br><b>NONE</b><br><span style="opacity:.7">Click an object<br>→ SET AS TARGET</span>';
+  $('radarRange').textContent='RANGE '+fmt(S.radar)+' u';
+  const list=[];for(const e of ents){if(isHidden(e)||e.id==='planetx'&&!S.discovered.planetx)continue;const d=S.pos.distanceTo(e.pos)-(e.R||0);if(d<4000)list.push([e,d])}
+  list.sort((a,b)=>a[1]-b[1]);
+  $('botcenter').innerHTML='<div class="nh">OBJECTS NEARBY</div>'+(list.length?list.slice(0,5).map(([e,d])=>`<div class="nr"><span>${dName(e)}</span><span>${fmt(d)} u</span></div>`).join(''):'<div class="nr"><span style="opacity:.6">Deep space — nothing within 4,000 u</span></div>');
+  if(S.physPanel){
+    const near=ents.filter(e=>e.isBody).map(e=>[e,S.pos.distanceTo(e.pos)-e.R]).sort((a,b)=>a[1]-b[1])[0];
+    const gm=S.gAcc.length(),acc=S.acc.length();
+    $('physics').innerHTML=`<div class="nh">PHYSICS PANEL</div>
+    <div class="r"><span>Mass</span><span>${SHIP_MASS} kg</span></div>
+    <div class="r"><span>Velocity</span><span>${spdAbs.toFixed(1)} m/s</span></div>
+    <div class="r"><span>Acceleration</span><span>${acc.toFixed(2)} m/s²</span></div>
+    <div class="r"><span>Gravity force</span><span>${fmt(gm*SHIP_MASS)} N (${gm.toFixed(3)} m/s²)</span></div>
+    <div class="r"><span>Thrust</span><span>${fmt(S.thrustN)} N</span></div>
+    <div class="r"><span>Nearest body</span><span>${near?near[0].name+' · '+fmt(near[1])+' u':'—'}</span></div>
+    <div class="r"><span>Reference frame</span><span>${S.refName}</span></div>
+    <div class="r"><span>Black hole dist</span><span>${S.discovered.bh?fmt(S.bhDist)+' u':'??? signal'}</span></div>
+    <div class="r"><span>Time scale</span><span>${S.timeScale.toFixed(2)}x</span></div>
+    <div class="r"><span>Mode</span><span>${settings.physics.toUpperCase()}</span></div>`}
+  refreshMissionThrottled();
+}
+let mT=0;function refreshMissionThrottled(){if((mT+=.1)>1){mT=0;refreshMission()}}
+const fmtT=s=>s<60?Math.round(s)+'s':Math.floor(s/60)+'m '+Math.round(s%60)+'s';
+const _p=new THREE.Vector3();
+function updateWaypoint(){
+  const wp=$('wp'),tg=S.target?byId[S.target]:null;
+  if(!tg||S.ui!=='play'){wp.classList.add('hidden');return}
+  _p.copy(tg.pos).project(camera);const behind=_p.z>1;
+  let x=_p.x,y=_p.y;if(behind){x=-x;y=-y}
+  const W=innerWidth,H=innerHeight,m=60;let sx=(x*.5+.5)*W,sy=(-y*.5+.5)*H,off=behind||sx<m||sx>W-m||sy<m||sy>H-m;
+  let rot=0;
+  if(off){const cx=W/2,cy=H/2;let dx=sx-cx,dy=sy-cy;if(behind){dx=-dx;dy=-dy;if(Math.abs(dx)<1&&Math.abs(dy)<1)dy=1}
+    const sc=Math.min((W/2-m)/Math.max(Math.abs(dx),1e-3),(H/2-m)/Math.max(Math.abs(dy),1e-3));sx=cx+dx*sc;sy=cy+dy*sc;rot=Math.atan2(dy,dx)+PI/2}
+  wp.classList.remove('hidden');
+  wp.innerHTML=(off?`<div class="arr" style="transform:rotate(${rot}rad)"></div>`:'<div class="dia"></div>')+`<div class="t">${dName(tg)}<br>${fmt(S.pos.distanceTo(tg.pos))} u</div>`;
+  wp.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-30px)`;
+}
+function updateMarkers(){
+  const pm=$('progMark'),rm=$('retroMark');
+  _v3.subVectors(S.vel,S.refVel);const sp=_v3.length();
+  if(sp<1||S.ui!=='play'){pm.classList.add('hidden');rm.classList.add('hidden');return}
+  _v3.normalize();
+  [[pm,1],[rm,-1]].forEach(([el,sg])=>{_p.copy(S.pos).addScaledVector(_v3,1000*sg).project(camera);
+    if(_p.z>1||Math.abs(_p.x)>1||Math.abs(_p.y)>1)el.classList.add('hidden');else{el.classList.remove('hidden');el.style.left=((_p.x*.5+.5)*innerWidth)+'px';el.style.top=((-_p.y*.5+.5)*innerHeight)+'px'}});
+}
+
+/* ----- hover / inspect ----- */
+function hoverUpdate(){
+  S.hover=null;S.near=null;S.focus=null;
+  if(S.ui!=='play'||S.tabletEnt){hlSprite.visible=false;$('hoverTip').textContent='';return}
+  let ndc=null;
+  if(S.locked)ndc=_n.set(0,0);else if(!S.wantLock)ndc=_n.set(S.cx/innerWidth*2-1,-(S.cy/innerHeight)*2+1);
+  if(ndc){raycaster.setFromCamera(ndc,camera);const h=raycaster.intersectObjects(proxies,false);if(h.length)S.hover=h[0].object.userData.ent}
+  let nearE=null,nd=300;
+  for(const e of ents){if(e.isBody||isHidden(e))continue;const d=S.pos.distanceTo(e.pos);if(d<nd){nd=d;nearE=e}}
+  S.near=nearE;
+  let focus=null;
+  if(S.hover){const d=S.pos.distanceTo(S.hover.pos)-(S.hover.R||0);focus=S.hover;S.hoverD=d}
+  else if(nearE){focus=nearE;S.hoverD=nd}
+  S.focus=focus;
+  const tip=$('hoverTip');
+  if(focus){
+    tip.innerHTML=`LEFT CLICK TO INSPECT<br><span style="color:#fff">${dName(focus)}</span> · ${fmt(S.hoverD)} u`+(focus.interact&&S.pos.distanceTo(focus.pos)<100?'<br><span style="color:#ffd23f">PRESS E — '+(focus.interact==='dock'?'DOCK':focus.interact==='recover'?'RECOVER':'COLLECT')+'</span>':'');
+    if(!focus.isBody&&S.hoverD<300){hlSprite.visible=true;hlSprite.position.copy(focus.pos);const s=Math.max(focus.pickR*2.6,14);hlSprite.scale.set(s,s,1);hlSprite.material.opacity=.6+.4*Math.sin(performance.now()*.008)}
+    else hlSprite.visible=false;
+  }else{tip.innerHTML='';hlSprite.visible=false}
+}
+function inspectClick(){const t=S.hover||S.near;if(t)openTablet(t);else AUD.beep(600)}
+function scaleProxies(){
+  for(const e of ents){
+    const d=Math.max(1,S.pos.distanceTo(e.pos));
+    for(const p of e.proxies){
+      if(p.geometry!==proxyGeo)continue;
+      let r;
+      if(e===bhE)r=Math.max(700,d*.015);
+      else if(e.isBody)r=Math.max(e.R,d*.008);
+      else if(e.surface)r=d<2500?clamp(d*.012,e.pickR,40):.01;
+      else r=Math.max(e.pickR,d*.012);
+      p.scale.setScalar(r);
+    }
+  }
+}
+
+/* ---------- 11. MINIMAP & GALAXY MAP ---------- */
+const mm=$('minimap'),mmc=mm.getContext('2d'),cp=$('compass'),cpc=cp.getContext('2d');
+const _inv=new THREE.Quaternion(),_r=new THREE.Vector3();
+function drawMinimap(t){
+  const W=170,c=mmc,cx=W/2,R=W/2-6;
+  c.clearRect(0,0,W,W);
+  const g=c.createRadialGradient(cx,cx,0,cx,cx,R);g.addColorStop(0,'rgba(8,40,70,.75)');g.addColorStop(1,'rgba(2,12,28,.9)');
+  c.fillStyle=g;c.beginPath();c.arc(cx,cx,R+3,0,TAU);c.fill();
+  c.strokeStyle='rgba(80,170,255,.35)';c.lineWidth=1;[R/3,R*2/3,R].forEach(r=>{c.beginPath();c.arc(cx,cx,r,0,TAU);c.stroke()});
+  c.beginPath();c.moveTo(cx-R,cx);c.lineTo(cx+R,cx);c.moveTo(cx,cx-R);c.lineTo(cx,cx+R);c.stroke();
+  const sw=t*2;c.strokeStyle='rgba(100,255,200,.35)';c.beginPath();c.moveTo(cx,cx);c.lineTo(cx+Math.cos(sw)*R,cx+Math.sin(sw)*R);c.stroke();
+  _inv.copy(S.quat).invert();
+  const tg=S.target?byId[S.target]:null;
+  const draw=(e,label)=>{
+    _r.subVectors(e.pos,S.pos).applyQuaternion(_inv);const d=_r.length();
+    let px=_r.x/S.radar*R,py=_r.z/S.radar*R;const l=Math.hypot(px,py),inRange=l<=R;
+    if(!inRange){if(e!==tg&&e!==bhE)return;px*=R/l;py*=R/l}
+    const x=cx+px,y=cy_(py);
+    if(e===bhE&&!S.discovered.bh){c.fillStyle='#c9a2ff';c.font='bold 14px Orbitron';c.textAlign='center';c.textBaseline='middle';c.fillText('?',x,y);c.strokeStyle='rgba(200,150,255,'+(.4+.4*Math.sin(t*4))+')';c.beginPath();c.arc(x,y,9,0,TAU);c.stroke();return}
+    c.fillStyle=e.color||'#8cf';
+    if(e===tg){c.strokeStyle='#ffd23f';c.beginPath();c.moveTo(x,y-6);c.lineTo(x+6,y);c.lineTo(x,y+6);c.lineTo(x-6,y);c.closePath();c.stroke()}
+    const rad=e.isBody?clamp(e.R/S.radar*R,2.5,7):3;
+    c.beginPath();c.arc(x,y,rad,0,TAU);c.globalAlpha=inRange?1:.5;c.fill();c.globalAlpha=1;
+  };
+  const cy_=py=>cx+py;
+  for(const e of ents){if(isHidden(e)||(e.id==='planetx'&&!S.discovered.planetx))continue;draw(e)}
+  c.fillStyle='#4aa8ff';c.beginPath();c.moveTo(cx,cx-7);c.lineTo(cx+5,cx+6);c.lineTo(cx-5,cx+6);c.closePath();c.fill();
+  c.strokeStyle='rgba(120,200,255,.6)';c.lineWidth=2;c.beginPath();c.arc(cx,cx,R+2,0,TAU);c.stroke();c.lineWidth=1;
+}
+function drawCompass(){
+  const c=cpc,cx=32,R=28;c.clearRect(0,0,64,64);
+  _v.set(0,0,-1).applyQuaternion(S.quat);const hdg=Math.atan2(_v.x,-_v.z),pit=Math.asin(clamp(_v.y,-1,1));
+  c.save();c.translate(cx,cx);c.rotate(-hdg);c.strokeStyle='rgba(100,190,255,.7)';c.lineWidth=1;c.beginPath();c.arc(0,0,R,0,TAU);c.stroke();
+  for(let i=0;i<4;i++){const a=i*PI/2;c.beginPath();c.moveTo(Math.sin(a)*(R-5),-Math.cos(a)*(R-5));c.lineTo(Math.sin(a)*R,-Math.cos(a)*R);c.stroke()}
+  c.fillStyle='#ff8a1f';c.font='bold 9px Orbitron';c.textAlign='center';c.textBaseline='middle';c.fillText('N',0,-R+10);
+  c.restore();
+  c.fillStyle='#fff';c.font='bold 10px Orbitron';c.textAlign='center';c.textBaseline='middle';c.fillText(String(Math.round((hdg*180/PI+360)%360)).padStart(3,'0'),cx,cx-4);
+}
+/* --- full map --- */
+const mapCv=$('mapCv'),mctx=mapCv.getContext('2d');
+const MAP={view:{cx:0,cz:0,zoom:.012},filter:'ALL',match:[],drag:null,sel:null,popEnt:null};
+function mapResize(){mapCv.width=mapCv.clientWidth*devicePixelRatio;mapCv.height=mapCv.clientHeight*devicePixelRatio}
+const w2s=(x,z)=>[mapCv.clientWidth/2+(x-MAP.view.cx)*MAP.view.zoom,mapCv.clientHeight/2+(z-MAP.view.cz)*MAP.view.zoom];
+function mapVisible(e){
+  if(isHidden(e))return false;
+  const f=MAP.filter;if(f==='ALL')return true;
+  if(f==='PLANETS')return e.cat==='planet'||e.cat==='star';
+  if(f==='LOST')return e.cat==='lost';
+  if(f==='MEGA')return e.cat==='mega'||e.cat==='blackhole';
+  if(f==='MISSIONS'){return e.id==='earth'||e.id==='mars'||e.id==='beagle2'||e===bhE||e.id===S.target||(e.id==='voyagerx')||(e.id==='planetx')}
+  return true;
+}
+function mapColor(e){if(e.cat==='lost')return S.found[e.id]?'#4dffa6':'#ffb44d';return e.color||'#8cf'}
+function mapSetView(cx,cz,zoom){MAP.view.cx=cx;MAP.view.cz=cz;MAP.view.zoom=zoom}
+function drawMap(t){
+  const W=mapCv.clientWidth,H=mapCv.clientHeight;if(!W)return;
+  mctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  const c=mctx;c.fillStyle='#01030a';c.fillRect(0,0,W,H);
+  const z=MAP.view.zoom;
+  const [sx0,sy0]=w2s(0,0);
+  c.strokeStyle='rgba(80,160,255,.28)';[5000,7500,10500,15000,25000,35000,45000,55000].forEach(r=>{c.beginPath();c.arc(sx0,sy0,r*z,0,TAU);c.stroke()});
+  const hit=[];const tg=S.target;
+  for(const e of ents){
+    if(!mapVisible(e))continue;
+    let [x,y]=w2s(e.pos.x,e.pos.z);
+    const isBH=e===bhE,off=x<30||x>W-30||y<30||y>H-30;
+    if(off&&!isBH)continue;
+    const rad=e.isBody&&e!==bhE?clamp(e.R*z,4,16):5;
+    const col=mapColor(e);
+    if(isBH){
+      c.fillStyle=S.discovered.bh?'#b27cff':'#c9a2ff';c.font='bold 20px Orbitron';c.textAlign='center';c.textBaseline='middle';
+      if(S.discovered.bh){c.fillStyle='#000';c.beginPath();c.arc(x,y,9,0,TAU);c.fill();c.strokeStyle='#ff8a1f';c.lineWidth=2;c.beginPath();c.ellipse(x,y,15,5,.3,0,TAU);c.stroke()}
+      else c.fillText('?',x,y+1);
+    }else{
+      c.fillStyle=col;c.beginPath();c.arc(x,y,rad,0,TAU);c.fill();
+      if(e.id===tg){c.strokeStyle='#ffd23f';c.lineWidth=2;c.strokeRect(x-rad-5,y-rad-5,rad*2+10,rad*2+10)}
+      if(e.cat==='planet'||e.cat==='star'||MAP.sel===e||z>.02){
+        c.fillStyle='#cfe8ff';c.font='10px Orbitron';c.textAlign='left';c.textBaseline='middle';c.fillText(dName(e),x+rad+7,y)}
+    }
+    hit.push([e,x,y]);
+  }
+  MAP.hit=hit;
+  const [px,py]=w2s(S.pos.x,S.pos.z);
+  c.fillStyle='#3fa0ff';c.beginPath();c.arc(px,py,4,0,TAU);c.fill();
+  c.fillStyle='#7ab';c.font='10px Orbitron';c.textAlign='right';c.fillText(`SCALE: 100 px = ${fmt(100/z)} u`,W-14,H-12);
+}
+mapCv.addEventListener('mousedown',e=>{MAP.drag={x:e.clientX,y:e.clientY,cx:MAP.view.cx,cz:MAP.view.cz,moved:false};$('mapPop').classList.add('hidden')});
+addEventListener('mousemove',e=>{const d=MAP.drag;if(!d)return;const dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.hypot(dx,dy)>4)d.moved=true;if(d.moved){MAP.view.cx=d.cx-dx/MAP.view.zoom;MAP.view.cz=d.cz-dy/MAP.view.zoom}});
+addEventListener('mouseup',e=>{
+  const d=MAP.drag;MAP.drag=null;if(!d||d.moved||S.ui!=='map')return;
+  const r=mapCv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;let best=null,bd=16;
+  for(const [en,x,y] of (MAP.hit||[])){const dd=Math.hypot(x-mx,y-my);if(dd<bd){bd=dd;best=en}}
+  if(best)mapPopup(best,e.clientX,e.clientY)
+});
+mapCv.addEventListener('wheel',e=>{e.preventDefault();const r=mapCv.getBoundingClientRect(),mx=e.clientX-r.left-r.width/2,my=e.clientY-r.top-r.height/2;
+  const old=MAP.view.zoom,nz=clamp(old*(e.deltaY>0?.85:1.18),.00002,3);
+  MAP.view.cx+=mx/old-mx/nz;MAP.view.cz+=my/old-my/nz;MAP.view.zoom=nz},{passive:false});
+function mapPopup(e,x,y){
+  MAP.sel=e;MAP.popEnt=e;const p=$('mapPop'),cost=warpCost(e);
+  p.innerHTML=`<div class="pt">${dName(e)}</div><small>DIST ${fmt(S.pos.distanceTo(e.pos))} u</small>
+   <button class="btn sm" id="mpT">SET AS TARGET</button><button class="btn sm or" id="mpW">WARP TO IT (${cost}% FUEL)</button><button class="btn sm" id="mpI">SHOW INFO</button>`;
+  p.style.left=Math.min(x+8,innerWidth-220)+'px';p.style.top=Math.min(y+8,innerHeight-170)+'px';p.classList.remove('hidden');AUD.blip();
+  $('mpT').onclick=()=>{setTarget(e);p.classList.add('hidden')};
+  $('mpW').onclick=()=>{p.classList.add('hidden');startWarp(e)};
+  $('mpI').onclick=()=>{p.classList.add('hidden');openTablet(e)};
+}
+document.querySelectorAll('#mapBar [data-f]').forEach(b=>b.onclick=()=>{MAP.filter=b.dataset.f;document.querySelectorAll('#mapBar [data-f]').forEach(x=>x.classList.toggle('on',x===b));AUD.blip()});
+$('mapSolar').onclick=()=>mapSetView(0,0,Math.min(mapCv.clientWidth,mapCv.clientHeight)/2/26000);
+$('mapAll').onclick=()=>mapSetView(0,0,Math.min(mapCv.clientWidth,mapCv.clientHeight)/2/260000);
+$('mapClose').onclick=()=>closeMap();
+$('mapLive').onclick=()=>{S.mapLive=!S.mapLive;$('mapLive').textContent='LIVE: '+(S.mapLive?'ON':'OFF');$('mapLive').classList.toggle('on',S.mapLive)};
+$('mapSearch').addEventListener('input',()=>{
+  const q=$('mapSearch').value.trim().toLowerCase();
+  MAP.match=q?ents.filter(e=>!isHidden(e)&&(dName(e).toLowerCase().includes(q)||e.id.includes(q))):[];
+});
+function focusMap(e){MAP.sel=e;mapSetView(e.pos.x,e.pos.z,e.surface?.6:(e.orbit&&e.orbit.parent)?.06:e.isBody?.03:.02)}
+function openMap(focusEnt){
+  setUI('map');mapResize();
+  if(focusEnt)focusMap(focusEnt);else if(!MAP.inited){MAP.inited=true;mapSetView(0,0,Math.min(mapCv.clientWidth,mapCv.clientHeight)/2/26000)}
+  AUD.tabletOpen();
+}
+function closeMap(){setUI('play');$('mapPop').classList.add('hidden');if(S.tabletEnt)closeTablet(false)}
+
+/* ---------- 12. TABLET / WARP / MENUS ---------- */
+function getInfo(e){
+  if(e.id==='bh'&&!S.discovered.bh)return{type:'UNKNOWN SIGNAL SOURCE',status:'UNIDENTIFIED',launch:'—',agency:'—',location:'??? (far from Earth)',what:'A faint repeating signal and an enormous gravitational anomaly.',why:'It could be nothing. It could be everything.',fun:'The signal repeats every 5 seconds — three notes.'};
+  if(e.id==='planetx'&&!S.discovered.planetx)return{type:'UNKNOWN OBJECT',status:'UNCHARTED',location:'Unknown',what:'Insufficient data. Move within 5,000 u.',why:'—',fun:'—'};
+  return e.info||{type:'Object',status:'—',what:'No data.'};
+}
+function statusFor(e,inf){
+  if(e.cat==='lost'){if(S.collected[e.id])return'<span style="color:#4dffa6">RECOVERED ✔</span>';if(S.found[e.id])return'<span style="color:#4dffa6">LOCATED ✔</span> — '+inf.status;return inf.status+' <span style="color:#ffb44d">(NOT YET FOUND)</span>'}
+  return inf.status;
+}
+function openTablet(e){
+  S.tabletEnt=e;const inf=getInfo(e),rows=[];
+  const R=(k,v)=>{if(v)rows.push(`<div class="row"><b>${k}</b><span>${v}</span></div>`)};
+  $('tbTitle').textContent=dName(e);
+  R('TYPE',inf.type);R('STATUS',statusFor(e,inf));R('LAUNCH DATE',inf.launch);R('AGENCY',inf.agency);R('LOCATION',inf.location);
+  rows.push(`<div class="row"><b>DISTANCE</b><span id="tbDist"></span></div>`);
+  const p=inf.planet;if(p){R('DIAMETER',p.diam);R('DAY / YEAR',p.day+' · '+p.year);R('TEMPERATURE',p.temp);R('MOONS',p.moons);R('CAN WE LIVE HERE?',p.live)}
+  const sec=(t,v)=>v&&v!=='—'?`<h4>${t}</h4><p>${v}</p>`:'';
+  $('tbBody').innerHTML=rows.join('')+sec('WHAT HAPPENED?',inf.what)+sec('WHY IT MATTERS?',inf.why)+sec('FUN FACT',inf.fun);
+  $('tbBody').scrollTop=0;tabletDistUpdate();
+  $('tbFound').classList.toggle('hidden',e.cat!=='lost'||isHidden(e));
+  $('tbFound').disabled=!!S.found[e.id];$('tbFound').textContent=S.found[e.id]?'FOUND ✔':'MARK AS FOUND';
+  $('tbTarget').textContent=S.target===e.id?'TARGET SET ✔':'SET AS TARGET';
+  $('tbWarp').textContent='WARP TO IT ('+warpCost(e)+'%)';
+  $('tablet').classList.add('open');AUD.tabletOpen();
+  if(S.ui==='play')unlockMouse();
+}
+function tabletDistUpdate(){const e=S.tabletEnt,el=$('tbDist');if(e&&el)el.textContent=fmt(S.pos.distanceTo(e.pos))+' u'}
+function closeTablet(relock){
+  if(!S.tabletEnt&&!$('tablet').classList.contains('open'))return;
+  $('tablet').classList.remove('open');S.tabletEnt=null;AUD.tabletClose();
+  if(relock!==false&&S.ui==='play'&&S.wantLock)lockMouse();
+}
+function setTarget(e){S.target=e.id;toast('TARGET SET: '+dName(e).toUpperCase());AUD.blip();if(S.tabletEnt===e)$('tbTarget').textContent='TARGET SET ✔'}
+$('tbClose').onclick=()=>closeTablet();
+$('tbTarget').onclick=()=>{if(S.tabletEnt)setTarget(S.tabletEnt)};
+$('tbWarp').onclick=()=>{const e=S.tabletEnt;if(e)startWarp(e)};
+$('tbFound').onclick=()=>{const e=S.tabletEnt;if(!e)return;
+  if(S.pos.distanceTo(e.pos)>300){toast('GET WITHIN 300 u TO MARK AS FOUND','warn');return}
+  S.found[e.id]=true;addScore(100);chimeToast(e.name.toUpperCase()+' MARKED AS FOUND  +100');$('tbFound').disabled=true;$('tbFound').textContent='FOUND ✔';refreshMission()};
+$('tbMap').onclick=()=>{const e=S.tabletEnt;if(!e)return;if(S.ui!=='map'){closeTablet(false);openMap(e)}else{focusMap(e)}};
+/* --- Warp --- */
+const warpCost=e=>e===bhE?50:20;
+function arrivalFor(e){
+  const out=new THREE.Vector3();
+  if(e===bhE){return out.copy(BH_POS).add(_v.set(-.707,0,-.707).multiplyScalar(7000))}
+  if(e.isBody){_v.subVectors(S.pos,e.pos);if(_v.lengthSq()<1)_v.set(1,.2,0);_v.normalize();return out.copy(e.pos).addScaledVector(_v,e.R*1.8+260)}
+  if(e.surface){_v.copy(e.attach.off).normalize();return out.copy(e.pos).addScaledVector(_v,140)}
+  const par=e.orbit&&e.orbit.parent;_v.copy(e.pos);if(par)_v.sub(par.pos);else _v.set(1,.3,.5);_v.normalize();return out.copy(e.pos).addScaledVector(_v,110);
+}
+function startWarp(e){
+  if(S.warp||S.over)return;
+  if(S.warpCd>0){toast('WARP DRIVE COOLING DOWN '+S.warpCd.toFixed(1)+'s','warn');return}
+  const c=warpCost(e);if(S.fuel<c){toast('INSUFFICIENT FUEL FOR WARP ('+c+'% REQUIRED)','bad');AUD.alarm();return}
+  S.fuel-=c;S.warp={t:0,e,done:false};S.landed=null;S.orbit=false;
+  if(S.ui==='map')closeMap();if(S.ui==='warp')closeWarpMenu();
+  if(S.tabletEnt)closeTablet(false);
+  AUD.whoosh();toast('WARP ENGAGED (10x Speed for 3s) · '+dName(e).toUpperCase()+' · −'+c+'% FUEL','warn');
+  if(S.ui==='play'&&S.wantLock)lockMouse();
+}
+function warpStep(dtR){
+  const w=S.warp;w.t+=dtR;
+  if(!w.done&&w.t>=1.3){
+    w.done=true;const e=w.e;updateEnts(S.simTime);const a=arrivalFor(e);S.pos.copy(a);S.vel.copy(e.vel);
+    S.quat.setFromRotationMatrix(new THREE.Matrix4().lookAt(ZERO,_v.subVectors(e.pos,a).normalize(),Y));
+    const f=$('flash');f.style.transition='none';f.style.opacity=.8;requestAnimationFrame(()=>{f.style.transition='opacity .9s';f.style.opacity=0});
+  }
+  if(w.t>=2.8){S.warp=null;S.warpCd=3;toast('WARP COMPLETE — ARRIVED','good')}
+}
+function openWarpMenu(){
+  setUI('warp');const b=$('wmBody');$('wmFuel').textContent='FUEL '+Math.round(S.fuel)+'%'+(S.warpCd>0?' · COOLDOWN '+S.warpCd.toFixed(1)+'s':'');
+  const groups=[['PLANETS & MOONS',e=>e.cat==='planet'&&e.id!=='planetx'||e.cat==='planet'&&S.discovered.planetx],['MEGA STRUCTURES',e=>e.cat==='mega'&&!isHidden(e)],['LOST OBJECTS',e=>e.cat==='lost'&&!isHidden(e)]];
+  let h='';
+  groups.forEach(([t,fn])=>{const l=ents.filter(e=>fn(e));if(!l.length)return;h+=`<h3>${t}</h3><div class="wgrid">`+l.map(e=>`<button class="btn" data-w="${e.id}">${dName(e)}<span>${warpCost(e)}%</span></button>`).join('')+'</div>'});
+  h+=`<h3 style="color:#c9a2ff">UNKNOWN</h3><div class="wgrid"><button class="btn bhw" data-w="bh">${S.discovered.bh?'GARGANTUA-1 (BLACK HOLE)':'??? UNKNOWN SIGNAL'}<span>50%</span></button></div>`;
+  b.innerHTML=h;b.querySelectorAll('[data-w]').forEach(btn=>btn.onclick=()=>startWarp(byId[btn.dataset.w]));AUD.tabletOpen();
+}
+function closeWarpMenu(){setUI('play')}
+$('wmClose').onclick=closeWarpMenu;
+$('btnWarp').onclick=()=>{if(S.ui==='play')openWarpMenu()};
+$('btnMap').onclick=()=>{if(S.ui==='play')openMap()};
+/* --- Settings & UI states --- */
+const UIMAP={map:'map',warp:'warpMenu',settings:'settings',dead:'gameover',win:'win',secret:'secretEnd',intro:'intro',play:null};
+function setUI(n){
+  S.ui=n;['map','warpMenu','settings','gameover','win','secretEnd','intro'].forEach(id=>$(id).classList.toggle('hidden',id!==UIMAP[n]));
+  $('hud').classList.toggle('hidden',n==='intro');
+  if(n==='play'){if(S.wantLock&&!S.tabletEnt)lockMouse()}else unlockMouse();
+}
+const isPaused=()=>['intro','settings','dead','win','secret'].includes(S.ui)||(S.ui==='map'&&!S.mapLive);
+function openSettings(){if(S.ui!=='play')return;syncSettingsUI();setUI('settings')}
+function closeSettings(){setUI('play')}
+function syncSettingsUI(){
+  $('setVol').value=settings.vol;$('setSens').value=settings.sens;$('setSound').textContent=settings.sound?'ON':'OFF';$('setSound').classList.toggle('on',settings.sound);
+  document.querySelectorAll('[data-g]').forEach(b=>b.classList.toggle('on',b.dataset.g===settings.gfx));
+  document.querySelectorAll('[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===settings.physics));
+}
+$('setVol').oninput=e=>{settings.vol=+e.target.value;AUD.setVol()};
+$('setSens').oninput=e=>{settings.sens=+e.target.value};
+$('setSound').onclick=()=>{settings.sound=!settings.sound;AUD.setVol();syncSettingsUI()};
+document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{settings.gfx=b.dataset.g;applyGraphics();syncSettingsUI()});
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{settings.physics=b.dataset.p;syncSettingsUI();toast('PHYSICS MODE: '+settings.physics.toUpperCase())});
+$('setResume').onclick=closeSettings;
+$('setSave').onclick=()=>toast(saveGame()?'GAME SAVED':'SAVE FAILED (storage blocked)',saveGame()?'good':'bad');
+$('setReset').onclick=()=>{if(confirm('Erase save and restart?')){try{localStorage.removeItem(SAVE_KEY)}catch(e){}S.suppress=true;location.reload()}};
+$('goRespawn').onclick=respawn;
+$('winCont').onclick=()=>{S.over=false;setUI('play');S.target='bh';refreshMission();toast('NEW TRANSMISSION: SECRET MISSION 4 — THE UNKNOWN SIGNAL','secret');saveGame()};
+$('secCont').onclick=()=>{S.over=false;setUI('play')};
+
+/* ---------- 13. START & MAIN LOOP ---------- */
+let worldReady=false;
+function begin(){
+  AUD.init();S.started=true;S.over=false;applyGraphics();refreshMission();
+  $('throttle').value=S.throttle*100;setUI('play');
+  toast('NASA RECOVERY PILOT — HOLD W TO LIFT OFF','warn');
+}
+$('btnStart').onclick=()=>{if(!worldReady)return;try{localStorage.removeItem(SAVE_KEY)}catch(e){}newGame();begin()};
+$('btnContinue').onclick=()=>{if(!worldReady)return;const sv=readSave();if(!sv){newGame()}else loadGame(sv);begin()};
+addEventListener('beforeunload',()=>{if(S.started&&!S.over)saveGame()});
+
+let last=performance.now(),sunT=0;
+function frame(now){
+  requestAnimationFrame(frame);
+  const dtR=Math.min((now-last)/1000,.1);last=now;const t=now/1000;
+  if(!worldReady){renderer.render(scene,camera);return}
+  if(S.ui!=='intro'&&!isPaused())physics(dtR);
+  if(S.started&&!S.over&&t-S.lastSave>12){S.lastSave=t;saveGame()}
+  if(S.ui==='intro'){
+    updateEnts(S.simTime+=dtR);
+    const a=t*.05;camera.position.copy(earth.pos).add(_v.set(Math.cos(a)*520,120,Math.sin(a)*520));camera.lookAt(earth.pos);
+  }else{
+    camera.position.copy(S.pos);camera.quaternion.copy(S.quat);
+    if(S.shake>.01){camera.position.addScaledVector(_v.set(Math.random()-.5,Math.random()-.5,Math.random()-.5),S.shake*2);
+      _q.setFromEuler(_e.set((Math.random()-.5)*.05*S.shake,(Math.random()-.5)*.05*S.shake,(Math.random()-.5)*.06*S.shake));camera.quaternion.multiply(_q);S.shake*=Math.exp(-dtR*3.2)}
+  }
+  const bhd=S.bhDist,near=1-smooth(1000,5000,bhd),ext=1-smooth(BH_R,1000,bhd);
+  const wTarget=S.warp?(S.warp.t<1.3?smooth(0,1.2,S.warp.t):1-smooth(1.3,2.8,S.warp.t)):0;
+  S.fovW=lerp(S.fovW||0,wTarget,1-Math.exp(-dtR*10));
+  const fov=70+S.fovW*40+ext*45+(S.ab&&S.ui==='play'?6:0)+near*3;
+  if(Math.abs(camera.fov-fov)>.05){camera.fov=fov;camera.updateProjectionMatrix()}
+  updateWarpLines(S.fovW,t);
+  sunT+=dtR;const fl=1+.03*Math.sin(sunT*2.3);sunCorona.forEach((c)=>c.scale.setScalar(6000*fl));
+  for(const e of ents)if(e.tick)e.tick(t,dtR);
+  updateBH(dtR,t);
+  syncNodes();
+  starsGroup.position.copy(camera.position);
+  scaleProxies();
+  scene.updateMatrixWorld();
+  if(S.ui==='play'){hoverUpdate()}
+  if(S.ui!=='intro'){
+    hudUpdate(dtR);drawMinimap(t);drawCompass();
+    if(S.alertT>0)S.alertT-=dtR;
+    let al='';
+    if(S.over){al=''}
+    else if(S.bhDist<1000)al='WARNING: EVENT HORIZON NEAR — ESCAPE VELOCITY EXCEEDED';
+    else if(S.alertT>0)al=S.alertMsg;
+    else if(S.bhDist<5000)al='⚠ GRAVITATIONAL ANOMALY — STRONG PULL';
+    else if(S.hull<30)al='HULL CRITICAL';
+    else if(S.fuel<=0)al='OUT OF FUEL';
+    else if(S.fuel<15)al='LOW FUEL';
+    $('alertBox').textContent=al;
+    const lh=$('lockHint');lh.textContent=(S.ui==='play'&&S.wantLock&&!S.locked&&!S.tabletEnt)?'CLICK TO CAPTURE MOUSE · TAB TOGGLES CURSOR':(S.ui==='play'&&!S.wantLock?'CURSOR MODE — TAB TO RETURN TO FLIGHT':'');
+    if(S.tabletEnt&&((S.tickCnt=(S.tickCnt||0)+1)%10===0))tabletDistUpdate();
+    if(S.ui==='map')drawMap(t);
+    const thrLvl=clamp(S.thr.length()*S.throttle*(S.ab?1.8:1.0)+(S.brake?.5:0),0,1.2);
+    let nearD=1e9;for(const e of ents){if(e.isBody||isHidden(e))continue;const d=S.pos.distanceTo(e.pos);if(d<nearD)nearD=d}
+    _r.subVectors(BH_POS,S.pos).applyQuaternion(_inv.copy(S.quat).invert());
+    AUD.update(dtR,{thrust:isPaused()?0:thrLvl,bh:1-smooth(300,6000,S.bhDist),near:nearD<2500?1:0,nearD,mystery:!S.discovered.bh&&S.ui==='play'?1:0,mDist:S.bhDist,mPan:_r.x/Math.max(1,_r.length())});
+  }
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(frame);
+
+setTimeout(()=>{
+  try{
+    buildWorld();worldReady=true;
+    camera.position.set(0,0,0);
+    const sv=readSave();
+    if(sv&&sv.settings)Object.assign(settings,sv.settings);
+    $('loadmsg').textContent='UNIVERSE READY · 500,000 × 500,000 × 500,000 UNITS';
+    $('btnStart').disabled=false;$('btnContinue').disabled=!sv;
+    S.simTime=0;
+  }catch(err){
+    console.error(err);$('loadmsg').textContent='ERROR: '+err.message;
+  }
+},60);
+</script>
+</body>
+</html>
