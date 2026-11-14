@@ -8,7 +8,7 @@
 <style>
 :root{--blue:#2f9bff;--cyan:#6fd8ff;--orange:#ff8a1f;--white:#eaf6ff;--panel:rgba(6,16,32,.80);--line:rgba(80,170,255,.45);--good:#4dffa6;--bad:#ff4d4d;--warn:#ffc34d}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--white);font-family:'Orbitron','Segoe UI',sans-serif;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--white);font-family:'Orbitron','Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
 .hidden{display:none!important}
 #stage{position:fixed;inset:0;overflow:hidden;background:#000}
 #c{position:absolute;inset:0;width:100%;height:100%;display:block;transform-origin:center center}
@@ -141,6 +141,31 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--whi
 #win h1,#secretEnd h1{font-size:clamp(24px,4.6vw,42px);letter-spacing:4px;background:linear-gradient(90deg,#fff,#6fd8ff,#ff8a1f);-webkit-background-clip:text;background-clip:text;color:transparent}
 #secretEnd h1{background:linear-gradient(90deg,#fff,#d9a2ff,#6ff)}
 #win p,#secretEnd p{font-family:'Segoe UI',sans-serif;font-size:15px;margin:14px auto 22px;color:#d6e8ff;max-width:660px;line-height:1.6}
+
+/* Mobile Controls */
+#mobCtl{position:fixed;inset:0;z-index:25;pointer-events:none;display:none}
+#mobCtl.active{display:block}
+#mobJoyZone{position:absolute;bottom:145px;left:18px;width:130px;height:130px;border-radius:50%;background:rgba(10,30,60,.45);border:2px solid rgba(80,170,255,.5);pointer-events:auto;touch-action:none}
+#mobJoyStick{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:radial-gradient(circle,rgba(111,216,255,.85),rgba(47,155,255,.45));border:2px solid #eaf6ff;box-shadow:0 0 12px rgba(80,170,255,.7);pointer-events:none}
+#mobLookZone{position:absolute;top:90px;right:0;bottom:150px;left:165px;pointer-events:auto;touch-action:none}
+#mobBtns{position:absolute;bottom:68px;right:14px;display:grid;grid-template-columns:repeat(3,62px);gap:8px;pointer-events:auto}
+.mbtn{font-family:inherit;background:rgba(10,35,75,.78);color:#eaf6ff;border:1px solid rgba(80,170,255,.65);border-radius:8px;height:46px;font-size:10px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;justify-content:center;text-align:center;touch-action:none;box-shadow:0 0 10px rgba(20,100,220,.3)}
+.mbtn:active,.mbtn.held{background:rgba(47,155,255,.85);color:#001;border-color:#fff}
+.mbtn.or{border-color:#ff8a1f;background:rgba(120,55,10,.78)}
+.mbtn.or:active,.mbtn.or.held{background:#ff8a1f;color:#000}
+#mobTopBtns{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
+@media (max-width:900px){
+  #mission{width:210px;font-size:9px;padding:6px 8px;max-height:36vh;overflow-y:auto}
+  #statBox{width:190px;font-size:9px;padding:6px 8px}
+  #minimap{width:110px;height:110px}
+  #botleft{width:210px;font-size:9px;padding:6px 8px;bottom:8px;left:8px}
+  #botcenter{display:none}
+  #botright{bottom:8px;right:8px;gap:6px}
+  #botright .btn{padding:6px 10px;font-size:10px}
+  #mobJoyZone{bottom:115px;left:14px;width:115px;height:115px}
+  #mobBtns{bottom:54px;right:8px;grid-template-columns:repeat(3,56px);gap:6px}
+  .mbtn{height:40px;font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -187,6 +212,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--whi
   <div id="wp" class="hidden"></div>
   <div id="progMark" class="vm hidden"></div>
   <div id="retroMark" class="vm hidden">✕</div>
+  <div id="mobCtl">
+    <div id="mobLookZone"></div>
+    <div id="mobJoyZone"><div id="mobJoyStick"></div></div>
+    <div id="mobTopBtns">
+      <button class="mbtn" id="mbPause" style="width:68px;height:32px">PAUSE</button>
+      <button class="mbtn" id="mbOrbit" style="width:68px;height:32px">ORBIT</button>
+      <button class="mbtn" id="mbInspect" style="width:74px;height:32px">INSPECT</button>
+    </div>
+    <div id="mobBtns">
+      <button class="mbtn" id="mbUp">UP</button>
+      <button class="mbtn or" id="mbBoost">BOOST</button>
+      <button class="mbtn" id="mbAct">ACT [E]</button>
+      <button class="mbtn" id="mbDown">DOWN</button>
+      <button class="mbtn" id="mbStop">STOP [X]</button>
+      <button class="mbtn" id="mbRollL">ROLL ⟲</button>
+    </div>
+  </div>
 </div>
 <div id="toasts"></div>
 
@@ -1364,13 +1406,13 @@ function openTablet(e){
   $('tbFound').disabled=!!S.found[e.id];$('tbFound').textContent=S.found[e.id]?'FOUND ✔':'MARK AS FOUND';
   $('tbTarget').textContent=S.target===e.id?'TARGET SET ✔':'SET AS TARGET';
   $('tbWarp').textContent='WARP TO IT ('+warpCost(e)+'%)';
-  $('tablet').classList.add('open');AUD.tabletOpen();
+  $('tablet').classList.add('open');AUD.tabletOpen();if(typeof updateMobileVisibility==='function')updateMobileVisibility();
   if(S.ui==='play')unlockMouse();
 }
 function tabletDistUpdate(){const e=S.tabletEnt,el=$('tbDist');if(e&&el)el.textContent=fmt(S.pos.distanceTo(e.pos))+' u'}
 function closeTablet(relock){
   if(!S.tabletEnt&&!$('tablet').classList.contains('open'))return;
-  $('tablet').classList.remove('open');S.tabletEnt=null;AUD.tabletClose();
+  $('tablet').classList.remove('open');S.tabletEnt=null;AUD.tabletClose();if(typeof updateMobileVisibility==='function')updateMobileVisibility();
   if(relock!==false&&S.ui==='play'&&S.wantLock)lockMouse();
 }
 function setTarget(e){S.target=e.id;toast('TARGET SET: '+dName(e).toUpperCase());AUD.blip();if(S.tabletEnt===e)$('tbTarget').textContent='TARGET SET ✔'}
@@ -1426,7 +1468,7 @@ const UIMAP={map:'map',warp:'warpMenu',settings:'settings',dead:'gameover',win:'
 function setUI(n){
   S.ui=n;['map','warpMenu','settings','gameover','win','secretEnd','intro'].forEach(id=>$(id).classList.toggle('hidden',id!==UIMAP[n]));
   $('hud').classList.toggle('hidden',n==='intro');
-  if(n==='play'){if(S.wantLock&&!S.tabletEnt)lockMouse()}else unlockMouse();
+  if(n==='play'){if(S.wantLock&&!S.tabletEnt)lockMouse()}else unlockMouse();if(typeof updateMobileVisibility==='function')updateMobileVisibility();
 }
 const isPaused=()=>['intro','settings','dead','win','secret'].includes(S.ui)||(S.ui==='map'&&!S.mapLive);
 function openSettings(){if(S.ui!=='play')return;syncSettingsUI();setUI('settings')}
@@ -1447,6 +1489,197 @@ $('setReset').onclick=()=>{if(confirm('Erase save and restart?')){try{localStora
 $('goRespawn').onclick=respawn;
 $('winCont').onclick=()=>{S.over=false;setUI('play');S.target='bh';refreshMission();toast('NEW TRANSMISSION: SECRET MISSION 4 — THE UNKNOWN SIGNAL','secret');saveGame()};
 $('secCont').onclick=()=>{S.over=false;setUI('play')};
+
+
+/* ---------- MOBILE TOUCH CONTROLS ---------- */
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const mobCtl = $('mobCtl'), mobJoyZone = $('mobJoyZone'), mobJoyStick = $('mobJoyStick'), mobLookZone = $('mobLookZone');
+const mobState = { joyX: 0, joyY: 0, joyId: null, lookId: null, lookLastX: 0, lookLastY: 0, lookStartX: 0, lookStartY: 0, lookMoved: false };
+
+function updateMobileVisibility() {
+  if (!mobCtl) return;
+  const show = isTouchDevice && S.ui === 'play' && !S.tabletEnt;
+  mobCtl.classList.toggle('active', show);
+  if (isTouchDevice) S.wantLock = false;
+}
+
+if (isTouchDevice) {
+  S.wantLock = false;
+  // Virtual Joystick (Forward/Back + Strafe Left/Right)
+  mobJoyZone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (mobState.joyId !== null) return;
+    const t = e.changedTouches[0];
+    mobState.joyId = t.identifier;
+    handleJoyMove(t);
+  }, { passive: false });
+
+  mobJoyZone.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier === mobState.joyId) handleJoyMove(t);
+    }
+  }, { passive: false });
+
+  const endJoy = e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === mobState.joyId) {
+        mobState.joyId = null;
+        mobState.joyX = 0;
+        mobState.joyY = 0;
+        mobJoyStick.style.transform = 'translate(0px, 0px)';
+        S.keys.KeyW = S.keys.KeyS = S.keys.KeyA = S.keys.KeyD = false;
+      }
+    }
+  };
+  mobJoyZone.addEventListener('touchend', endJoy);
+  mobJoyZone.addEventListener('touchcancel', endJoy);
+
+  function handleJoyMove(t) {
+    const r = mobJoyZone.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const maxR = r.width / 2 - 20;
+    let dx = t.clientX - cx, dy = t.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist > maxR) { dx = dx / dist * maxR; dy = dy / dist * maxR; }
+    mobJoyStick.style.transform = `translate(${dx}px, ${dy}px)`;
+    mobState.joyX = dx / maxR;
+    mobState.joyY = dy / maxR;
+    const dead = 0.22;
+    S.keys.KeyW = mobState.joyY < -dead;
+    S.keys.KeyS = mobState.joyY > dead;
+    S.keys.KeyA = mobState.joyX < -dead;
+    S.keys.KeyD = mobState.joyX > dead;
+  }
+
+  // Touch-drag Look & Tap-to-Inspect on Look Zone
+  mobLookZone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (mobState.lookId !== null) return;
+    const t = e.changedTouches[0];
+    mobState.lookId = t.identifier;
+    mobState.lookLastX = mobState.lookStartX = t.clientX;
+    mobState.lookLastY = mobState.lookStartY = t.clientY;
+    mobState.lookMoved = false;
+  }, { passive: false });
+
+  mobLookZone.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier === mobState.lookId) {
+        const dx = t.clientX - mobState.lookLastX;
+        const dy = t.clientY - mobState.lookLastY;
+        if (Math.hypot(t.clientX - mobState.lookStartX, t.clientY - mobState.lookStartY) > 10) {
+          mobState.lookMoved = true;
+        }
+        const sens = 0.0042 * settings.sens;
+        S.pendYaw -= dx * sens;
+        S.pendPitch -= dy * sens;
+        mobState.lookLastX = t.clientX;
+        mobState.lookLastY = t.clientY;
+      }
+    }
+  }, { passive: false });
+
+  const endLook = e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === mobState.lookId) {
+        if (!mobState.lookMoved) {
+          // Tap to inspect tapped screen coordinates
+          const ndc = new THREE.Vector2(
+            (t.clientX / innerWidth) * 2 - 1,
+            -(t.clientY / innerHeight) * 2 + 1
+          );
+          raycaster.setFromCamera(ndc, camera);
+          const hits = raycaster.intersectObjects(proxies, false);
+          if (hits.length) openTablet(hits[0].object.userData.ent);
+          else inspectClick();
+        }
+        mobState.lookId = null;
+      }
+    }
+  };
+  mobLookZone.addEventListener('touchend', endLook);
+  mobLookZone.addEventListener('touchcancel', endLook);
+
+  // Hold Buttons
+  const bindHold = (id, keyCode) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('touchstart', e => { e.preventDefault(); S.keys[keyCode] = true; el.classList.add('held'); }, { passive: false });
+    const rel = e => { e.preventDefault(); S.keys[keyCode] = false; el.classList.remove('held'); };
+    el.addEventListener('touchend', rel);
+    el.addEventListener('touchcancel', rel);
+  };
+  bindHold('mbUp', 'Space');
+  bindHold('mbDown', 'KeyF');
+  bindHold('mbBoost', 'ShiftLeft');
+  bindHold('mbStop', 'KeyX');
+  bindHold('mbRollL', 'KeyQ');
+
+  // Tap Action Buttons
+  const bindTap = (id, fn) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('touchstart', e => { e.preventDefault(); fn(); }, { passive: false });
+  };
+  bindTap('mbAct', () => interact());
+  bindTap('mbOrbit', () => toggleOrbit());
+  bindTap('mbPause', () => openSettings());
+  bindTap('mbInspect', () => {
+    const t = S.focus || S.hover || S.near;
+    if (t) openTablet(t);
+    else toast('AIM OR TAP ON AN OBJECT TO INSPECT', 'warn');
+  });
+
+  // Touch support on Galaxy Map (single-finger pan, two-finger pinch zoom, tap dot)
+  let mapTouch = { id: null, x: 0, y: 0, cx: 0, cz: 0, moved: false, pinchDist: 0 };
+  mapCv.addEventListener('touchstart', e => {
+    e.preventDefault();
+    $('mapPop').classList.add('hidden');
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      mapTouch = { id: t.identifier, x: t.clientX, y: t.clientY, cx: MAP.view.cx, cz: MAP.view.cz, moved: false, pinchDist: 0 };
+    } else if (e.touches.length === 2) {
+      const [t1, t2] = e.touches;
+      mapTouch.pinchDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      mapTouch.moved = true;
+    }
+  }, { passive: false });
+
+  mapCv.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && mapTouch.id !== null) {
+      const t = e.touches[0];
+      const dx = t.clientX - mapTouch.x, dy = t.clientY - mapTouch.y;
+      if (Math.hypot(dx, dy) > 6) mapTouch.moved = true;
+      if (mapTouch.moved) {
+        MAP.view.cx = mapTouch.cx - dx / MAP.view.zoom;
+        MAP.view.cz = mapTouch.cz - dy / MAP.view.zoom;
+      }
+    } else if (e.touches.length === 2 && mapTouch.pinchDist > 0) {
+      const [t1, t2] = e.touches;
+      const d = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const ratio = d / mapTouch.pinchDist;
+      MAP.view.zoom = clamp(MAP.view.zoom * ratio, 0.00002, 3);
+      mapTouch.pinchDist = d;
+    }
+  }, { passive: false });
+
+  mapCv.addEventListener('touchend', e => {
+    if (e.touches.length === 0 && !mapTouch.moved && S.ui === 'map') {
+      const r = mapCv.getBoundingClientRect();
+      const mx = mapTouch.x - r.left, my = mapTouch.y - r.top;
+      let best = null, bd = 26;
+      for (const [en, x, y] of (MAP.hit || [])) {
+        const dd = Math.hypot(x - mx, y - my);
+        if (dd < bd) { bd = dd; best = en; }
+      }
+      if (best) mapPopup(best, mapTouch.x, mapTouch.y);
+    }
+    if (e.touches.length === 0) mapTouch.id = null;
+  });
+}
 
 /* ---------- 13. START & MAIN LOOP ---------- */
 let worldReady=false;
